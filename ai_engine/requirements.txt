@@ -1,6 +1,6 @@
 # PyTorch: use official CPU wheels on Windows (avoids c10.dll WinError 1114 from PyPI torch 2.12+)
 --extra-index-url https://download.pytorch.org/whl/cpu
-torch==2.7.0
+torch==2.12.1+cpu
 
 langchain==0.3.30
 langchain-text-splitters==0.3.11
