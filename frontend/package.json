@@ -33,7 +33,7 @@
     "@capacitor/core": "^8.4.2",
     "@mediapipe/tasks-vision": "^0.10.32",
     "axios": "^1.9.0",
-    "dompurify": "^3.2.6",
+    "dompurify": "^3.4.11",
     "element-plus": "^2.9.11",
     "katex": "^0.16.22",
     "markdown-it": "^14.1.0",
