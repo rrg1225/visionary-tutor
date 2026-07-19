@@ -158,7 +158,11 @@
         @retry="retryGeneration"
       />
 
-      <div v-if="resourceVisibilityNotice" class="resource-notice vt-card" role="alert">
+      <div
+        v-if="resourceVisibilityNotice"
+        class="resource-notice vt-card"
+        role="alert"
+      >
         <div>
           <strong>生成结果暂未出现在资源列表</strong>
           <p>{{ resourceVisibilityNotice }}</p>
@@ -445,7 +449,8 @@ const generationHint = computed(() => {
   return "";
 });
 
-const { libraryResources, loading, loadError, loadLibrary } = useResourceLibrary();
+const { libraryResources, loading, loadError, loadLibrary } =
+  useResourceLibrary();
 const scopedResources = computed(() =>
   libraryResources.value.filter((item) =>
     props.allowedTypes.includes(item.artifactType),
@@ -768,7 +773,11 @@ onMounted(bootstrap);
   align-items: center;
   justify-content: space-between;
   gap: var(--vt-space-4);
-  border-color: color-mix(in srgb, var(--vt-accent-orange) 42%, var(--vt-border-light));
+  border-color: color-mix(
+    in srgb,
+    var(--vt-accent-orange) 42%,
+    var(--vt-border-light)
+  );
   background: color-mix(in srgb, var(--vt-accent-orange) 8%, var(--vt-surface));
 }
 
