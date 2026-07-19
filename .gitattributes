@@ -1,0 +1,14 @@
+# 强制所有文本文件使用 LF 换行符，保证跨平台（Win/Mac/Linux）一致性
+* text=auto eol=lf
+
+# 针对特定文件类型明确声明
+*.java text eol=lf
+*.py text eol=lf
+*.js text eol=lf
+*.vue text eol=lf
+*.md text eol=lf
+*.jsonl text eol=lf
+
+# Premium PPT 模板：推荐 Git LFS 跟踪二进制（需 git lfs install）
+# 若未启用 LFS，仍可作为普通文件提交
+ai_engine/templates/*.pptx filter=lfs diff=lfs merge=lfs -text

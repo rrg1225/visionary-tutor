@@ -1,0 +1,46 @@
+name: Encoding CI
+
+on:
+  push:
+    paths:
+      - '**/*.java'
+      - '**/*.js'
+      - '**/*.ts'
+      - '**/*.vue'
+      - '**/*.py'
+      - '**/*.yml'
+      - '**/*.yaml'
+      - '**/*.md'
+      - '**/*.properties'
+      - '**/*.xml'
+      - '**/*.sql'
+      - 'scripts/check-encoding.ps1'
+      - '.editorconfig'
+      - '.gitattributes'
+  pull_request:
+    paths:
+      - '**/*.java'
+      - '**/*.js'
+      - '**/*.ts'
+      - '**/*.vue'
+      - '**/*.py'
+      - '**/*.yml'
+      - '**/*.yaml'
+      - '**/*.md'
+      - '**/*.properties'
+      - '**/*.xml'
+      - '**/*.sql'
+      - 'scripts/check-encoding.ps1'
+      - '.editorconfig'
+      - '.gitattributes'
+
+jobs:
+  utf8:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Validate UTF-8 and mojibake markers
+        shell: pwsh
+        run: ./scripts/check-encoding.ps1

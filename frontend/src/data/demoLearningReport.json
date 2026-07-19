@@ -1,0 +1,34 @@
+{
+  "summary": "演示报告：你在卷积神经网络相关知识点上整体掌握良好，公式推导与代码实操仍有提升空间。",
+  "metricsSummary": "前测 52% → 后测 78%（+26%）\n测验正确率 78% · 掌握度提升 +12% · 近 7 天互动 6 次（演示数据）",
+  "llmUsed": false,
+  "insufficientData": false,
+  "meaningfulMetricCount": 5,
+  "prePostSummary": {
+    "preTestAverage": 52,
+    "postTestAverage": 78,
+    "delta": 26,
+    "preTestCount": 1,
+    "postTestCount": 1,
+    "comparable": true
+  },
+  "masteryCurve": [
+    { "concept": "综合练习", "metricType": "PRE_TEST", "masteryPercent": 52, "eventTime": "2026-06-01T10:00:00Z" },
+    { "concept": "CNN padding", "metricType": "QUIZ_ACCURACY", "masteryPercent": 65, "eventTime": "2026-06-02T14:00:00Z" },
+    { "concept": "综合练习", "metricType": "POST_TEST", "masteryPercent": 78, "eventTime": "2026-06-05T16:30:00Z" }
+  ],
+  "radarData": [
+    { "axis": "概念理解", "value": 74 },
+    { "axis": "公式推导", "value": 58 },
+    { "axis": "代码实操", "value": 62 },
+    { "axis": "作业正确率", "value": 78 },
+    { "axis": "学习持续性", "value": 70 }
+  ],
+  "suggestions": [
+    "先用图解回顾卷积输出尺寸公式，再完成 2 道推导小题巩固。",
+    "针对 PyTorch shape 报错，建议完成一次最小卷积层调试案例。",
+    "保持每周至少 2 次短练习，避免知识点回退。"
+  ],
+  "shouldReplan": false,
+  "replanReason": ""
+}

@@ -1,0 +1,12 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+
+[*.{java,js,ts,vue,py,yml,yaml,json,jsonl,md,xml,properties,sql,ps1}]
+charset = utf-8
+
+[*.{png,jpg,jpeg,gif,webp,pdf,pptx,docx,xlsx}]
+insert_final_newline = false

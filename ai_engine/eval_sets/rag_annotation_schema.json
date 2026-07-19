@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "id", "query", "gold_answer", "expected_terms", "expected_sources", "should_refuse",
+    "chapter", "difficulty", "scenario_type", "annotation_status", "annotator_role"
+  ],
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "query": { "type": "string", "minLength": 3 },
+    "gold_answer": { "type": "string" },
+    "expected_terms": { "type": "array", "items": { "type": "string" } },
+    "expected_sources": { "type": "array", "items": { "type": "string" } },
+    "should_refuse": { "type": "boolean" },
+    "chapter": { "type": "string", "minLength": 1 },
+    "difficulty": { "enum": ["easy", "medium", "hard"] },
+    "scenario_type": { "enum": ["grounded", "unsupported", "prompt_injection", "wrong_citation", "cross_chapter"] },
+    "annotation_status": { "enum": ["draft", "teacher_reviewed", "adjudicated"] },
+    "annotator_role": { "enum": ["student", "teacher", "expert_panel"] },
+    "review_notes": { "type": "string" }
+  },
+  "additionalProperties": true
+}

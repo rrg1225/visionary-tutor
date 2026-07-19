@@ -1,0 +1,69 @@
+{
+  "version": "1.0.0",
+  "description": "Premium PPT 模板字段映射与容量表",
+  "capacity": {
+    "topic": {
+      "max_items": 1,
+      "max_chars": 40,
+      "ellipsis": true
+    },
+    "subtitle": {
+      "max_items": 1,
+      "max_chars": 60,
+      "ellipsis": true
+    },
+    "studentProfile": {
+      "max_items": 1,
+      "max_chars": 200,
+      "max_lines": 4,
+      "ellipsis": true
+    },
+    "handout": {
+      "max_items": 6,
+      "max_chars": 72,
+      "ellipsis": true
+    },
+    "quiz": {
+      "max_items": 5,
+      "max_chars": 90,
+      "ellipsis": true
+    },
+    "mindmap": {
+      "max_items": 1,
+      "max_chars": 150,
+      "ellipsis": true
+    },
+    "videoScript": {
+      "max_items": 4,
+      "max_chars": 80,
+      "ellipsis": true
+    },
+    "citations": {
+      "max_items": 6,
+      "max_chars": 100,
+      "ellipsis": true
+    },
+    "speaker_notes": {
+      "max_items": 1,
+      "max_chars": 500,
+      "ellipsis": true
+    },
+    "footerNote": {
+      "max_items": 1,
+      "max_chars": 80,
+      "ellipsis": true
+    }
+  },
+  "field_mappings": {
+    "topic": "{{topic}}",
+    "subtitle": "{{subtitle}}",
+    "studentProfile": "{{studentProfile}}",
+    "handout": "{{handout}}",
+    "quiz": "{{quiz}}",
+    "mindmap": "{{mindmap}}",
+    "videoScript": "{{videoScript}}",
+    "citations": "{{citations}}",
+    "footerNote": "{{footerNote}}",
+    "speaker_notes": "{{speaker_notes}}"
+  }
+}

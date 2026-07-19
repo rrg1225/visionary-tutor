@@ -1,0 +1,16 @@
+{
+  "appId": "com.visionary.tutor",
+  "appName": "智途 Agent",
+  "webDir": "dist",
+  "server": {
+    "url": "https://zhiyexueye.top",
+    "cleartext": false,
+    "allowNavigation": [
+      "zhiyexueye.top"
+    ]
+  },
+  "android": {
+    "allowMixedContent": false,
+    "backgroundColor": "#f5f2ff"
+  }
+}

@@ -1,0 +1,111 @@
+# VisionaryTutor repository ignore rules
+
+# Secrets and local environment
+.env
+.env.*
+!frontend/.env.android
+!frontend/.env.windows
+!.env.example
+**/.env.properties
+.claude/
+*.jks
+*.keystore
+*.p12
+*.pfx
+*.pem
+*.key
+
+# IDE and operating-system files
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+*.swp
+~$*
+
+# Local tool installations
+.tools/
+
+# Java / Maven build output
+target/
+/backend/maven-status/
+/backend/surefire-reports/
+/backend/maven-archiver/
+/backend/mvn-compile-out.txt
+*.exec
+
+# JavaScript build output and dependencies
+node_modules/
+/frontend/dist/
+/frontend/coverage/
+/frontend/test-results/
+/frontend/playwright-report/
+/frontend/blob-report/
+/.playwright-cli/
+/frontend/.vite/
+/frontend/build-cache/
+/frontend/android/.gradle/
+/frontend/android/**/build/
+/frontend/android/local.properties
+/frontend/android/app/src/main/assets/public/
+
+# Python environments and caches
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Logs and temporary runtime output
+*.log
+*.pid
+*.hprof
+hs_err_pid*.log
+.tmp/
+tmp/
+/output/
+/reports/
+/e2e/
+/03_测试证据/reports/
+/loadtest/*.err
+
+# Local review and packaged release artifacts
+/.codex-doc-review-*/
+/release/
+/security_best_practices_report.md
+/提交材料/
+/项目截图/
+/智途Agent_软件杯A3_项目演示.pptx
+/*.zip
+
+# Chroma and knowledge-base derived data
+/ai_engine/visionary_chroma_data/
+/ai_engine/knowledge_base/vector_store/
+/ai_engine/knowledge_base/rag_md_files/
+/ai_engine/knowledge_base/processed/**
+!/ai_engine/knowledge_base/processed/code_layer/
+!/ai_engine/knowledge_base/processed/code_layer/visionary_pytorch_training_loop.md
+!/ai_engine/knowledge_base/processed/concept_layer/
+!/ai_engine/knowledge_base/processed/concept_layer/visionary_multi_agent_orchestration.md
+!/ai_engine/knowledge_base/processed/concept_layer/visionary_neural_network_training_fundamentals.md
+!/ai_engine/knowledge_base/processed/concept_layer/visionary_rag_quality_and_refusal.md
+!/ai_engine/knowledge_base/processed/course_layer/
+!/ai_engine/knowledge_base/processed/course_layer/visionary_learning_profile_and_assessment.md
+/ai_engine/knowledge_base/embeddings/
+*.sqlite3-journal
+
+# Reproducible submission artifacts
+/submission-dist/
+/submission-dist.zip
+
+
+
+
+# Playwright generated artifacts
+frontend/.playwright-cli/
+frontend/output/playwright/

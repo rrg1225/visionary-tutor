@@ -1,0 +1,431 @@
+{
+  "version": "1.0.0",
+  "reviewStatus": "TEAM_REVIEW_REQUIRED",
+  "papers": [
+    {
+      "code": "cnn-convolution-v1",
+      "title": "CNN 与卷积尺寸综合题卷",
+      "description": "覆盖输出尺寸、参数量、感受野、分组卷积与代码纠错。",
+      "topic": "CNN 与卷积尺寸",
+      "difficulty": "ADVANCED",
+      "durationMinutes": 70,
+      "questions": [
+        {
+          "id": "cnn-q1", "order": 1, "type": "CALCULATION", "difficulty": "ADVANCED",
+          "knowledgePoints": ["卷积输出尺寸", "stride", "padding"],
+          "prompt": "输入特征图为 32×32，卷积核 3×3，stride=2，padding=1，dilation=1。写出单边输出尺寸的计算过程与最终输出空间尺寸。",
+          "subQuestions": ["写出通用公式", "代入参数并处理向下取整"], "options": [],
+          "standardAnswer": "H_out=floor((32+2×1-1×(3-1)-1)/2+1)=16，因此输出空间尺寸为 16×16。",
+          "scoringPoints": [
+            {"id": "formula", "description": "使用含 dilation 的输出尺寸公式", "points": 6.25, "acceptedKeywords": ["32+2", "dilation", "floor", "向下取整"]},
+            {"id": "result", "description": "得到 16×16", "points": 6.25, "acceptedKeywords": ["16×16", "16x16", "16 * 16"]}
+          ],
+          "explanation": "有效卷积核尺寸为 3。分子为 32+2-2-1=31，31/2+1=16.5，按定义向下取整得到 16。",
+          "commonErrors": ["把 stride=2 误认为直接除以 2", "遗漏最后的 +1", "忘记向下取整"], "distractorAnalysis": {},
+          "sources": [{"title": "PyTorch Conv2d shape", "url": "https://docs.pytorch.org/docs/stable/generated/torch.nn.Conv2d.html"}],
+          "recommendedReview": "卷积输出尺寸公式与 dilation 有效核", "validationMethod": "代入 PyTorch Conv2d 并检查 tensor.shape", "testCases": [], "maxScore": 12.5
+        },
+        {
+          "id": "cnn-q2", "order": 2, "type": "SINGLE_CHOICE", "difficulty": "ADVANCED",
+          "knowledgePoints": ["dilation", "有效卷积核"],
+          "prompt": "3×3 卷积核使用 dilation=2 时，其单边有效核尺寸是多少？",
+          "subQuestions": [],
+          "options": [{"key": "A", "text": "3"}, {"key": "B", "text": "4"}, {"key": "C", "text": "5"}, {"key": "D", "text": "6"}],
+          "standardAnswer": "C",
+          "scoringPoints": [{"id": "choice", "description": "选择有效核尺寸 5", "points": 12.5, "acceptedKeywords": ["C", "5"]}],
+          "explanation": "有效核尺寸为 dilation×(kernel_size-1)+1=2×2+1=5。",
+          "commonErrors": ["直接计算 3×2", "认为 dilation 会增加参数量"],
+          "distractorAnalysis": {"A": "忽略了 dilation", "B": "少算一个间隔", "D": "把核尺寸直接乘 dilation"},
+          "sources": [{"title": "PyTorch Conv2d dilation", "url": "https://docs.pytorch.org/docs/stable/generated/torch.nn.Conv2d.html"}],
+          "recommendedReview": "空洞卷积与有效感受野", "validationMethod": "公式校验", "testCases": [], "maxScore": 12.5
+        },
+        {
+          "id": "cnn-q3", "order": 3, "type": "CALCULATION", "difficulty": "ADVANCED",
+          "knowledgePoints": ["卷积参数量", "bias"],
+          "prompt": "一个 Conv2d 层 in_channels=3、out_channels=16、kernel_size=3、groups=1 且含 bias。计算可训练参数总数。",
+          "subQuestions": ["计算权重参数", "加上偏置参数"], "options": [],
+          "standardAnswer": "权重为 16×3×3×3=432，偏置为 16，总计 448。",
+          "scoringPoints": [
+            {"id": "weight", "description": "权重参数 432", "points": 6.25, "acceptedKeywords": ["432", "16×3×3×3", "16*3*3*3"]},
+            {"id": "total", "description": "含偏置总计 448", "points": 6.25, "acceptedKeywords": ["448"]}
+          ],
+          "explanation": "Conv2d 权重形状为 out_channels×(in_channels/groups)×kH×kW，bias 每个输出通道一个。",
+          "commonErrors": ["漏掉输出通道维", "漏掉 bias", "把输出特征图尺寸计入参数量"], "distractorAnalysis": {},
+          "sources": [{"title": "PyTorch Conv2d weight shape", "url": "https://docs.pytorch.org/docs/stable/generated/torch.nn.Conv2d.html"}],
+          "recommendedReview": "卷积权重张量形状", "validationMethod": "sum(p.numel() for p in layer.parameters())", "testCases": [], "maxScore": 12.5
+        },
+        {
+          "id": "cnn-q4", "order": 4, "type": "CODE_DEBUGGING", "difficulty": "ADVANCED",
+          "knowledgePoints": ["张量形状", "Flatten", "线性层"],
+          "prompt": "以下网络在输入尺寸变化后报 mat1 and mat2 shapes cannot be multiplied。指出根因并给出不依赖手算空间尺寸的修复方案：\nself.features = nn.Sequential(nn.Conv2d(3, 16, 3), nn.ReLU())\nself.fc = nn.Linear(16*30*30, 10)",
+          "subQuestions": ["解释报错根因", "给出可运行修复"], "options": [],
+          "standardAnswer": "根因是 Linear 的 in_features 固定绑定 30×30。可在卷积后加入 nn.AdaptiveAvgPool2d((1,1))，再 Flatten 并使用 nn.Linear(16,10)；或用 LazyLinear 并用代表输入验证。",
+          "scoringPoints": [
+            {"id": "cause", "description": "指出 Linear 输入维与实际 flatten 维不一致", "points": 6.25, "acceptedKeywords": ["in_features", "flatten", "维度不一致", "shape"]},
+            {"id": "fix", "description": "给出自适应池化或 LazyLinear 修复", "points": 6.25, "acceptedKeywords": ["AdaptiveAvgPool2d", "LazyLinear"]}
+          ],
+          "explanation": "卷积输出空间尺寸取决于输入与卷积参数。把 30×30 写死会使模型只接受一种输入。自适应池化把空间维归一为固定大小。",
+          "commonErrors": ["只修改某一个魔法数字", "用 view(-1) 吞掉 batch 维", "未用样例输入验证"], "distractorAnalysis": {},
+          "sources": [{"title": "PyTorch reasoning about shapes", "url": "https://docs.pytorch.org/tutorials/recipes/recipes/reasoning_about_shapes.html"}],
+          "recommendedReview": "卷积网络 shape 推理", "validationMethod": "分别输入 32×32 与 64×64 张量，输出均应为 N×10",
+          "testCases": [{"input": "torch.randn(2,3,32,32)", "expected": "shape == (2,10)"}, {"input": "torch.randn(2,3,64,64)", "expected": "shape == (2,10)"}], "maxScore": 12.5
+        },
+        {
+          "id": "cnn-q5", "order": 5, "type": "SHORT_ANSWER", "difficulty": "ADVANCED",
+          "knowledgePoints": ["1×1 卷积", "通道变换"],
+          "prompt": "说明 1×1 卷积在 CNN 中的两项典型作用，并指出它不会直接扩大单层空间感受野的原因。",
+          "subQuestions": [], "options": [],
+          "standardAnswer": "1×1 卷积可进行通道升降维并在每个空间位置混合通道信息；其空间核只覆盖一个位置，所以单层不扩大空间感受野。",
+          "scoringPoints": [
+            {"id": "roles", "description": "通道升降维或通道混合", "points": 6.25, "acceptedKeywords": ["升维", "降维", "通道混合", "通道变换"]},
+            {"id": "rf", "description": "说明空间核为 1×1 因而不扩大空间感受野", "points": 6.25, "acceptedKeywords": ["1×1", "空间感受野", "一个位置"]}
+          ],
+          "explanation": "1×1 卷积在每个像素位置对通道做线性组合，常用于瓶颈结构，但空间邻域仍只有当前位置。",
+          "commonErrors": ["把 1×1 卷积说成完全没有非线性作用", "认为通道混合等于空间混合"], "distractorAnalysis": {},
+          "sources": [{"title": "Network in Network", "url": "https://arxiv.org/abs/1312.4400"}],
+          "recommendedReview": "瓶颈结构与通道投影", "validationMethod": "概念核对", "testCases": [], "maxScore": 12.5
+        },
+        {
+          "id": "cnn-q6", "order": 6, "type": "CALCULATION", "difficulty": "ADVANCED",
+          "knowledgePoints": ["感受野", "stride"],
+          "prompt": "两个连续的 3×3、stride=1、dilation=1 卷积层之间没有池化。第二层单个输出位置在原输入上的理论感受野是多少？给出递推。",
+          "subQuestions": [], "options": [],
+          "standardAnswer": "第一层感受野 3，跳距 1；第二层感受野为 3+(3-1)×1=5，即 5×5。",
+          "scoringPoints": [
+            {"id": "recurrence", "description": "写出感受野递推", "points": 6.25, "acceptedKeywords": ["3+(3-1)", "递推", "跳距"]},
+            {"id": "result", "description": "得到 5×5", "points": 6.25, "acceptedKeywords": ["5×5", "5x5"]}
+          ],
+          "explanation": "stride 都为 1 时，每增加一层 3×3 卷积，理论感受野单边增加 2。",
+          "commonErrors": ["直接把 3×3 与 3×3 相乘", "把 padding 误计为扩大理论感受野"], "distractorAnalysis": {},
+          "sources": [{"title": "A guide to receptive field arithmetic", "url": "https://distill.pub/2019/computing-receptive-fields/"}],
+          "recommendedReview": "感受野与跳距递推", "validationMethod": "递推公式校验", "testCases": [], "maxScore": 12.5
+        },
+        {
+          "id": "cnn-q7", "order": 7, "type": "CALCULATION", "difficulty": "ADVANCED",
+          "knowledgePoints": ["深度可分离卷积", "参数量"],
+          "prompt": "输入通道 32、输出通道 64、卷积核 3×3。忽略 bias，比较标准卷积与 depthwise 3×3 + pointwise 1×1 的参数量。",
+          "subQuestions": ["标准卷积参数量", "深度可分离卷积参数量"], "options": [],
+          "standardAnswer": "标准卷积为 32×64×3×3=18432；depthwise 为 32×3×3=288，pointwise 为 32×64=2048，总计 2336。",
+          "scoringPoints": [
+            {"id": "standard", "description": "标准卷积 18432", "points": 6.25, "acceptedKeywords": ["18432"]},
+            {"id": "separable", "description": "深度可分离卷积 2336", "points": 6.25, "acceptedKeywords": ["2336", "288", "2048"]}
+          ],
+          "explanation": "depthwise 每个输入通道一个 3×3 核，pointwise 再完成通道混合，因此显著减少参数。",
+          "commonErrors": ["depthwise 仍乘输出通道 64", "漏掉 pointwise"], "distractorAnalysis": {},
+          "sources": [{"title": "PyTorch Conv2d groups", "url": "https://docs.pytorch.org/docs/stable/generated/torch.nn.Conv2d.html"}],
+          "recommendedReview": "groups 与 depthwise multiplier", "validationMethod": "创建两种层并统计参数", "testCases": [], "maxScore": 12.5
+        },
+        {
+          "id": "cnn-q8", "order": 8, "type": "MULTI_STEP", "difficulty": "ADVANCED",
+          "knowledgePoints": ["same padding", "边界信息", "工程权衡"],
+          "prompt": "设计一个保持 64×64 空间尺寸的 3×3 卷积模块，并分析 zero padding 对边界响应的影响。要求给出参数、尺寸证明和一种减轻边界伪影的方法。",
+          "subQuestions": ["给出 Conv2d 参数", "证明输出尺寸", "分析边界与改进"], "options": [],
+          "standardAnswer": "使用 kernel_size=3、stride=1、padding=1、dilation=1 可保持 64×64。零填充在边界引入非真实的 0，可能使边界响应与内部不同；可按任务采用 reflect/replicate padding 或在训练中显式覆盖边界情况。",
+          "scoringPoints": [
+            {"id": "params", "description": "给出 k=3,s=1,p=1", "points": 4.0, "acceptedKeywords": ["padding=1", "stride=1", "kernel_size=3"]},
+            {"id": "proof", "description": "证明输出仍为 64", "points": 4.0, "acceptedKeywords": ["64", "输出尺寸"]},
+            {"id": "boundary", "description": "指出零填充边界伪影并给出改进", "points": 4.5, "acceptedKeywords": ["reflect", "replicate", "边界", "伪影"]}
+          ],
+          "explanation": "odd kernel 且 stride=1 时 padding=(k-1)/2 可保持空间尺寸。填充值选择仍属于建模假设，应通过数据与误差分析验证。",
+          "commonErrors": ["只说 same 而不写参数", "认为 padding 不影响数值", "用裁剪掩盖尺寸错误"], "distractorAnalysis": {},
+          "sources": [{"title": "PyTorch Conv2d padding modes", "url": "https://docs.pytorch.org/docs/stable/generated/torch.nn.Conv2d.html"}],
+          "recommendedReview": "padding 模式与边界效应", "validationMethod": "用常数图像比较 zeros 与 reflect 的边界输出", "testCases": [], "maxScore": 12.5
+        }
+      ]
+    },
+    {
+      "code": "training-tuning-v1",
+      "title": "模型训练、过拟合与调参综合题卷",
+      "description": "覆盖训练/验证诊断、正则化、数据泄漏、学习率与可复现性。",
+      "topic": "模型训练、过拟合和调参",
+      "difficulty": "ADVANCED", "durationMinutes": 70,
+      "questions": [
+        {
+          "id": "train-q1", "order": 1, "type": "SINGLE_CHOICE", "difficulty": "ADVANCED", "knowledgePoints": ["过拟合", "学习曲线"],
+          "prompt": "训练损失持续下降，而验证损失在第 12 轮后持续上升。最直接的诊断是什么？", "subQuestions": [],
+          "options": [{"key": "A", "text": "欠拟合"}, {"key": "B", "text": "过拟合"}, {"key": "C", "text": "梯度恒为零"}, {"key": "D", "text": "标签必然错误"}],
+          "standardAnswer": "B", "scoringPoints": [{"id": "choice", "description": "识别训练/验证分叉为过拟合", "points": 12.5, "acceptedKeywords": ["B", "过拟合"]}],
+          "explanation": "训练集继续改善而验证集恶化说明泛化差距扩大，是典型过拟合信号。", "commonErrors": ["只看训练损失", "把所有验证波动都判为数据错误"],
+          "distractorAnalysis": {"A": "欠拟合通常训练与验证都较差", "C": "训练损失下降说明梯度并非恒零", "D": "曲线不足以推出标签必然错误"},
+          "sources": [{"title": "Deep Learning book regularization", "url": "https://www.deeplearningbook.org/contents/regularization.html"}],
+          "recommendedReview": "学习曲线与泛化差距", "validationMethod": "曲线模式判断", "testCases": [], "maxScore": 12.5
+        },
+        {
+          "id": "train-q2", "order": 2, "type": "CODE_DEBUGGING", "difficulty": "ADVANCED", "knowledgePoints": ["Dropout", "eval 模式"],
+          "prompt": "验证准确率每次运行波动很大，代码在验证阶段只用了 torch.no_grad()，没有调用 model.eval()。解释问题并修复。", "subQuestions": [], "options": [],
+          "standardAnswer": "torch.no_grad() 只关闭梯度记录，不会关闭 Dropout 或切换 BatchNorm 行为。验证前调用 model.eval()，下一轮训练前再调用 model.train()。",
+          "scoringPoints": [{"id": "cause", "description": "区分 no_grad 与 eval", "points": 6.25, "acceptedKeywords": ["no_grad", "Dropout", "BatchNorm"]}, {"id": "fix", "description": "正确切换 eval/train", "points": 6.25, "acceptedKeywords": ["model.eval()", "model.train()"]}],
+          "explanation": "模式切换控制模块行为，梯度上下文控制自动求导，两者职责不同。", "commonErrors": ["认为 no_grad 等于 eval", "验证后忘记切回 train"], "distractorAnalysis": {},
+          "sources": [{"title": "PyTorch saving and loading models", "url": "https://docs.pytorch.org/tutorials/beginner/saving_loading_models.html"}],
+          "recommendedReview": "训练与推理模式", "validationMethod": "连续两次对同一 batch 推理应在相同模式下稳定", "testCases": [{"input": "model.eval(); model(x)", "expected": "Dropout disabled"}], "maxScore": 12.5
+        },
+        {
+          "id": "train-q3", "order": 3, "type": "SHORT_ANSWER", "difficulty": "ADVANCED", "knowledgePoints": ["weight decay", "正则化"],
+          "prompt": "说明 weight decay 为什么可能改善泛化，并指出它与直接降低学习率不是同一件事。", "subQuestions": [], "options": [],
+          "standardAnswer": "weight decay 对参数规模施加惩罚或衰减，限制过大的权重并改变优化目标/更新；学习率只缩放更新步长，不直接表达参数复杂度偏好。",
+          "scoringPoints": [{"id": "regularization", "description": "说明参数衰减或复杂度约束", "points": 6.25, "acceptedKeywords": ["参数", "衰减", "正则", "惩罚"]}, {"id": "difference", "description": "区分学习率与正则化作用", "points": 6.25, "acceptedKeywords": ["学习率", "步长", "优化目标"]}],
+          "explanation": "两者都影响参数更新，但 weight decay 表达对参数大小的偏好，学习率控制走多大一步。", "commonErrors": ["把 weight decay 当成学习率调度", "断言所有参数都应同样衰减"], "distractorAnalysis": {},
+          "sources": [{"title": "Decoupled Weight Decay Regularization", "url": "https://arxiv.org/abs/1711.05101"}],
+          "recommendedReview": "L2 正则与 AdamW", "validationMethod": "概念核对", "testCases": [], "maxScore": 12.5
+        },
+        {
+          "id": "train-q4", "order": 4, "type": "MULTI_STEP", "difficulty": "ADVANCED", "knowledgePoints": ["数据泄漏", "数据划分"],
+          "prompt": "同一患者的多张图像被随机分到训练集和验证集，验证指标异常高。分析泄漏机制，给出重划分方法和一项验证手段。", "subQuestions": ["泄漏机制", "重划分", "验证"], "options": [],
+          "standardAnswer": "同一患者的高度相关样本跨集合，使模型利用患者特征而非泛化。应按 patient_id 分组划分，并检查三个集合的患者 ID 交集为空，同时保存划分清单。",
+          "scoringPoints": [{"id": "leak", "description": "识别同主体相关样本泄漏", "points": 4.0, "acceptedKeywords": ["患者", "相关", "泄漏"]}, {"id": "split", "description": "按 patient_id 分组划分", "points": 4.0, "acceptedKeywords": ["patient_id", "分组", "主体"]}, {"id": "verify", "description": "验证 ID 交集为空", "points": 4.5, "acceptedKeywords": ["交集", "为空", "清单"]}],
+          "explanation": "独立同分布假设作用于评估单元。医学影像中常应以患者而非图片作为划分单元。", "commonErrors": ["只重新打乱图片", "训练后才去重", "用验证集反复调参后仍称无偏测试"], "distractorAnalysis": {},
+          "sources": [{"title": "Hidden Technical Debt in Machine Learning Systems", "url": "https://papers.nips.cc/paper/5656-hidden-technical-debt-in-machine-learning-systems"}],
+          "recommendedReview": "group split 与评估独立性", "validationMethod": "断言 train_ids、val_ids、test_ids 两两不相交", "testCases": [], "maxScore": 12.5
+        },
+        {
+          "id": "train-q5", "order": 5, "type": "CODE_DEBUGGING", "difficulty": "ADVANCED", "knowledgePoints": ["学习率调度", "优化器"],
+          "prompt": "训练循环在 optimizer.step() 之前调用 scheduler.step()，首个学习率值被跳过。写出推荐顺序并解释。", "subQuestions": [], "options": [],
+          "standardAnswer": "通常每个 epoch/batch 先完成 backward，再 optimizer.step()，随后按调度器语义调用 scheduler.step()；否则可能跳过初始学习率计划。",
+          "scoringPoints": [{"id": "order", "description": "给出 backward→optimizer.step→scheduler.step", "points": 6.25, "acceptedKeywords": ["backward", "optimizer.step", "scheduler.step"]}, {"id": "reason", "description": "说明会跳过初始学习率", "points": 6.25, "acceptedKeywords": ["初始学习率", "跳过", "顺序"]}],
+          "explanation": "调度器通常基于已完成的优化步推进计数，具体频率仍需服从所用 scheduler 的文档。", "commonErrors": ["所有 scheduler 都固定每 batch 调用", "忘记 zero_grad"], "distractorAnalysis": {},
+          "sources": [{"title": "PyTorch learning rate scheduler", "url": "https://docs.pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate"}],
+          "recommendedReview": "优化步骤与 scheduler 语义", "validationMethod": "记录每步 optimizer.param_groups[0]['lr']", "testCases": [{"input": "optimizer.step(); scheduler.step()", "expected": "initial lr is used"}], "maxScore": 12.5
+        },
+        {
+          "id": "train-q6", "order": 6, "type": "SHORT_ANSWER", "difficulty": "ADVANCED", "knowledgePoints": ["BatchNorm", "小批量"],
+          "prompt": "为什么极小 batch 可能使 BatchNorm 训练不稳定？给出两种可选处理方案。", "subQuestions": [], "options": [],
+          "standardAnswer": "BatchNorm 的批统计量在极小 batch 下方差大且不可靠。可冻结已有 BN 统计量，改用 GroupNorm/LayerNorm，或采用同步 BN/增大有效 batch（视任务和硬件而定）。",
+          "scoringPoints": [{"id": "cause", "description": "指出批统计估计不稳定", "points": 6.25, "acceptedKeywords": ["批统计", "方差", "不稳定"]}, {"id": "solutions", "description": "给出至少两种处理", "points": 6.25, "acceptedKeywords": ["GroupNorm", "LayerNorm", "冻结", "SyncBatchNorm"]}],
+          "explanation": "BN 在训练模式使用当前 batch 的均值和方差，样本过少时估计噪声增大。", "commonErrors": ["认为梯度累积会自动改变 BN 每次前向的 batch 统计", "无条件删除所有归一化"], "distractorAnalysis": {},
+          "sources": [{"title": "Group Normalization", "url": "https://arxiv.org/abs/1803.08494"}],
+          "recommendedReview": "归一化层的统计维度", "validationMethod": "比较不同 batch 下运行统计与验证指标", "testCases": [], "maxScore": 12.5
+        },
+        {
+          "id": "train-q7", "order": 7, "type": "CALCULATION", "difficulty": "ADVANCED", "knowledgePoints": ["梯度累积", "loss scaling"],
+          "prompt": "希望用 4 个 micro-batch 模拟一个大 batch。若每个 micro-batch 的 loss 默认是均值，怎样缩放 loss 才能使累计梯度近似大 batch 均值梯度？", "subQuestions": [], "options": [],
+          "standardAnswer": "每个 micro-batch 的 loss 除以 4 后再 backward，累计 4 次，再执行一次 optimizer.step() 和 zero_grad()。",
+          "scoringPoints": [{"id": "scale", "description": "loss 除以 4", "points": 6.25, "acceptedKeywords": ["除以 4", "/4", "1/4"]}, {"id": "step", "description": "累计四次后只优化一次", "points": 6.25, "acceptedKeywords": ["4 次", "一次 optimizer.step", "累计"]}],
+          "explanation": "每个 micro-batch 已经取均值，不再缩放会使累计梯度放大约 4 倍。", "commonErrors": ["每个 micro-batch 都 optimizer.step", "累计期间清零梯度"], "distractorAnalysis": {},
+          "sources": [{"title": "PyTorch zeroing gradients recipe", "url": "https://docs.pytorch.org/tutorials/recipes/recipes/zeroing_out_gradients.html"}],
+          "recommendedReview": "梯度累积与有效 batch", "validationMethod": "与拼接后的大 batch 梯度数值比较", "testCases": [], "maxScore": 12.5
+        },
+        {
+          "id": "train-q8", "order": 8, "type": "MULTI_STEP", "difficulty": "ADVANCED", "knowledgePoints": ["调参实验", "可复现性", "早停"],
+          "prompt": "验证集表现不稳定。设计一个可复核的调参实验，至少说明控制变量、随机性、选择指标和停止规则。", "subQuestions": ["实验控制", "随机性", "指标与停止"], "options": [],
+          "standardAnswer": "固定数据划分与预处理，一次只改变目标超参数；记录随机种子、代码/数据版本并用多个种子重复；预先定义主指标与置信区间/均值；仅用验证集选择，设置 patience 早停，最终只在独立测试集评估一次。",
+          "scoringPoints": [{"id": "control", "description": "固定划分且一次改变一个因素", "points": 4.0, "acceptedKeywords": ["控制变量", "一次", "固定数据划分"]}, {"id": "random", "description": "记录种子版本并重复实验", "points": 4.0, "acceptedKeywords": ["随机种子", "多个种子", "版本"]}, {"id": "metric", "description": "预定义指标、早停与独立测试", "points": 4.5, "acceptedKeywords": ["主指标", "早停", "独立测试集"]}],
+          "explanation": "调参结论需要把数据、代码、随机性和决策规则一起固定，否则差异无法归因。", "commonErrors": ["看到最好一次结果就停止", "反复查看测试集", "同时改多个因素"], "distractorAnalysis": {},
+          "sources": [{"title": "PyTorch reproducibility", "url": "https://docs.pytorch.org/docs/stable/notes/randomness.html"}],
+          "recommendedReview": "实验设计与模型选择偏差", "validationMethod": "检查实验记录是否能重放", "testCases": [], "maxScore": 12.5
+        }
+      ]
+    },
+    {
+      "code": "object-detection-v1", "title": "目标检测、IoU、NMS 与 mAP 综合题卷",
+      "description": "覆盖框几何、后处理、指标解释与检测代码纠错。", "topic": "目标检测、IoU、NMS 和 mAP", "difficulty": "ADVANCED", "durationMinutes": 75,
+      "questions": [
+        {
+          "id": "det-q1", "order": 1, "type": "CALCULATION", "difficulty": "ADVANCED", "knowledgePoints": ["IoU", "边界框"],
+          "prompt": "采用连续坐标面积定义。框 A=(0,0,4,4)，框 B=(2,2,6,6)。计算交集面积、并集面积与 IoU。", "subQuestions": [], "options": [],
+          "standardAnswer": "交集为 2×2=4；两框面积各 16，并集为 16+16-4=28；IoU=4/28=1/7≈0.1429。",
+          "scoringPoints": [{"id": "intersection", "description": "交集面积 4", "points": 4.0, "acceptedKeywords": ["交集", "4"]}, {"id": "union", "description": "并集面积 28", "points": 4.0, "acceptedKeywords": ["并集", "28"]}, {"id": "iou", "description": "IoU 为 1/7 或 0.1429", "points": 4.5, "acceptedKeywords": ["1/7", "0.1429", "0.143"]}],
+          "explanation": "先对 x、y 区间分别求重叠长度，再用交集除以并集。题目明确连续坐标，不能额外 +1。", "commonErrors": ["把交集除以两个面积之和", "混用像素索引 +1 约定"], "distractorAnalysis": {},
+          "sources": [{"title": "Faster R-CNN", "url": "https://arxiv.org/abs/1506.01497"}], "recommendedReview": "IoU 坐标约定", "validationMethod": "手算并用 torchvision.ops.box_iou 校验", "testCases": [], "maxScore": 12.5
+        },
+        {
+          "id": "det-q2", "order": 2, "type": "MULTI_STEP", "difficulty": "ADVANCED", "knowledgePoints": ["NMS", "score sorting"],
+          "prompt": "同一类别有三个框：A 分数0.9，B分数0.8，C分数0.7。IoU(A,B)=0.7，IoU(A,C)=0.2，阈值0.5。标准贪心 NMS 最终保留哪些框？说明顺序。", "subQuestions": [], "options": [],
+          "standardAnswer": "先保留最高分 A；B 与 A 的 IoU=0.7>0.5 被抑制；C 与 A 的 IoU=0.2≤0.5 被保留，因此保留 A、C。",
+          "scoringPoints": [{"id": "order", "description": "先按分数选择 A", "points": 4.0, "acceptedKeywords": ["A", "最高分", "先"]}, {"id": "suppress", "description": "抑制 B", "points": 4.0, "acceptedKeywords": ["B", "抑制", "0.7"]}, {"id": "keep", "description": "保留 C", "points": 4.5, "acceptedKeywords": ["A、C", "A,C", "保留 C"]}],
+          "explanation": "标准 NMS 反复选择当前最高分框，并移除与其重叠超过阈值的剩余框。", "commonErrors": ["按坐标顺序处理", "同时删除 A 和 B", "把低于阈值的 C 删除"], "distractorAnalysis": {},
+          "sources": [{"title": "torchvision.ops.nms", "url": "https://docs.pytorch.org/vision/stable/generated/torchvision.ops.nms.html"}], "recommendedReview": "NMS 贪心流程", "validationMethod": "用 torchvision.ops.nms 验证索引", "testCases": [], "maxScore": 12.5
+        },
+        {
+          "id": "det-q3", "order": 3, "type": "SINGLE_CHOICE", "difficulty": "ADVANCED", "knowledgePoints": ["COCO AP", "IoU 阈值"],
+          "prompt": "COCO 常用的 AP@[.50:.95] 最准确的含义是哪一项？", "subQuestions": [],
+          "options": [{"key": "A", "text": "只在 IoU=0.5 计算 AP"}, {"key": "B", "text": "在 0.50 到 0.95 的多个 IoU 阈值上取平均"}, {"key": "C", "text": "准确率与召回率直接相加"}, {"key": "D", "text": "每张图只保留一个框"}],
+          "standardAnswer": "B", "scoringPoints": [{"id": "choice", "description": "识别多 IoU 阈值平均", "points": 12.5, "acceptedKeywords": ["B", "多个 IoU", "平均"]}],
+          "explanation": "COCO 主 AP 指标在 0.50:0.05:0.95 的 IoU 阈值上汇总，比分别只看 AP50 更严格。", "commonErrors": ["把 AP50 当作 COCO 主 AP", "把类别平均与阈值平均混淆"],
+          "distractorAnalysis": {"A": "这是 AP50", "C": "AP 来自 PR 曲线而非简单相加", "D": "与指标定义无关"},
+          "sources": [{"title": "COCO detection evaluation", "url": "https://cocodataset.org/#detection-eval"}], "recommendedReview": "AP50、AP75 与主 AP", "validationMethod": "指标定义核对", "testCases": [], "maxScore": 12.5
+        },
+        {
+          "id": "det-q4", "order": 4, "type": "SHORT_ANSWER", "difficulty": "ADVANCED", "knowledgePoints": ["anchor matching", "正负样本"],
+          "prompt": "anchor-based 检测器中，若正样本 IoU 阈值设置过高，训练可能出现什么问题？给出一种缓解方法。", "subQuestions": [], "options": [],
+          "standardAnswer": "正 anchor 数量可能过少，分类/回归监督稀疏并导致训练不稳定。可调整正负阈值与采样策略、保证每个 GT 的最佳 anchor 为正样本，或改进 anchor 尺度/比例。",
+          "scoringPoints": [{"id": "effect", "description": "正样本过少与监督稀疏", "points": 6.25, "acceptedKeywords": ["正样本过少", "监督稀疏", "不稳定"]}, {"id": "mitigation", "description": "给出阈值/最佳匹配/anchor 设计缓解", "points": 6.25, "acceptedKeywords": ["阈值", "最佳 anchor", "尺度", "采样"]}],
+          "explanation": "匹配规则同时控制样本质量与数量，阈值不是越高越好。", "commonErrors": ["认为阈值只影响推理 NMS", "忽略 GT 最佳匹配保障"], "distractorAnalysis": {},
+          "sources": [{"title": "Faster R-CNN", "url": "https://arxiv.org/abs/1506.01497"}], "recommendedReview": "RPN 标签分配", "validationMethod": "统计每 batch 正负 anchor 数量", "testCases": [], "maxScore": 12.5
+        },
+        {
+          "id": "det-q5", "order": 5, "type": "CODE_DEBUGGING", "difficulty": "ADVANCED", "knowledgePoints": ["坐标格式", "IoU 实现"],
+          "prompt": "某 IoU 函数把输入 [cx,cy,w,h] 直接当成 [x1,y1,x2,y2] 计算面积，结果出现负面积。指出修复步骤。", "subQuestions": [], "options": [],
+          "standardAnswer": "先把中心宽高格式转换为角点格式：x1=cx-w/2、y1=cy-h/2、x2=cx+w/2、y2=cy+h/2；再 clamp 交集宽高到非负，并统一连续坐标/像素索引约定。",
+          "scoringPoints": [{"id": "convert", "description": "正确完成 cxcywh→xyxy", "points": 6.25, "acceptedKeywords": ["cx-w/2", "cy-h/2", "cx+w/2", "xyxy"]}, {"id": "clamp", "description": "交集宽高 clamp 非负并统一约定", "points": 6.25, "acceptedKeywords": ["clamp", "非负", "坐标约定"]}],
+          "explanation": "面积公式依赖明确的坐标表示。转换与边界裁剪应成为独立、可测试的函数。", "commonErrors": ["只对最终 IoU 取绝对值", "混用归一化坐标与像素坐标"], "distractorAnalysis": {},
+          "sources": [{"title": "torchvision box_convert", "url": "https://docs.pytorch.org/vision/stable/generated/torchvision.ops.box_convert.html"}], "recommendedReview": "检测框坐标格式", "validationMethod": "用已知重叠与不重叠框做单测", "testCases": [{"input": "[2,2,4,4] cxcywh", "expected": "[0,0,4,4] xyxy"}], "maxScore": 12.5
+        },
+        {
+          "id": "det-q6", "order": 6, "type": "SHORT_ANSWER", "difficulty": "ADVANCED", "knowledgePoints": ["class-wise NMS", "多类别检测"],
+          "prompt": "为什么多类别检测通常按类别执行 NMS，而不是把所有类别的框混在一起？", "subQuestions": [], "options": [],
+          "standardAnswer": "不同类别可能在同一位置真实共存或模型给出不同语义假设。全类别混合 NMS 会让高分某类错误抑制另一类；通常按类别分组，或用带类别偏移的 batched NMS。",
+          "scoringPoints": [{"id": "reason", "description": "指出跨类不应互相抑制", "points": 6.25, "acceptedKeywords": ["不同类别", "互相抑制", "共存"]}, {"id": "method", "description": "按类别或 batched NMS", "points": 6.25, "acceptedKeywords": ["按类别", "batched NMS", "分组"]}],
+          "explanation": "NMS 表达的是同一语义目标的重复预测抑制，类别是后处理分组的一部分。", "commonErrors": ["认为 NMS 会自动理解类别", "无条件使用 class-agnostic NMS"], "distractorAnalysis": {},
+          "sources": [{"title": "torchvision batched_nms", "url": "https://docs.pytorch.org/vision/stable/generated/torchvision.ops.batched_nms.html"}], "recommendedReview": "类别感知后处理", "validationMethod": "构造同坐标不同类别框", "testCases": [], "maxScore": 12.5
+        },
+        {
+          "id": "det-q7", "order": 7, "type": "MULTI_STEP", "difficulty": "ADVANCED", "knowledgePoints": ["precision", "recall", "阈值"],
+          "prompt": "降低检测置信度阈值后，precision 与 recall 通常如何变化？为什么最终仍应查看完整 PR 曲线而非单点？", "subQuestions": [], "options": [],
+          "standardAnswer": "阈值降低通常保留更多预测，recall 上升，同时假阳性可能增加使 precision 下降。单点依赖任意阈值，PR 曲线与 AP 更完整地描述不同阈值下的权衡。",
+          "scoringPoints": [{"id": "recall", "description": "recall 通常上升", "points": 4.0, "acceptedKeywords": ["recall", "上升", "召回"]}, {"id": "precision", "description": "precision 可能下降", "points": 4.0, "acceptedKeywords": ["precision", "下降", "假阳性"]}, {"id": "curve", "description": "说明 PR 曲线覆盖阈值权衡", "points": 4.5, "acceptedKeywords": ["PR 曲线", "阈值", "权衡", "AP"]}],
+          "explanation": "阈值改变预测集合，precision/recall 是成对观察的指标。", "commonErrors": ["认为两者一定同时上升", "只报告最好单点且不说明阈值"], "distractorAnalysis": {},
+          "sources": [{"title": "COCO detection evaluation", "url": "https://cocodataset.org/#detection-eval"}], "recommendedReview": "PR 曲线与工作点选择", "validationMethod": "扫阈值绘制 PR 曲线", "testCases": [], "maxScore": 12.5
+        },
+        {
+          "id": "det-q8", "order": 8, "type": "MULTI_STEP", "difficulty": "ADVANCED", "knowledgePoints": ["检测流水线", "误差分析", "评估"],
+          "prompt": "一个小目标检测系统 AP 低。设计从数据到后处理的排查顺序，至少覆盖标注、输入分辨率/特征层、匹配与损失、NMS 和分尺度指标。", "subQuestions": ["数据", "模型训练", "后处理与指标"], "options": [],
+          "standardAnswer": "先抽样可视化标注与类别分布；检查缩放后小目标像素和对应高分辨率特征层；统计正样本匹配与各损失；分别评估 NMS 前后候选并扫阈值；查看 AP_small、召回和按类错误，逐层做对照实验。",
+          "scoringPoints": [{"id": "data", "description": "检查标注与小目标尺度", "points": 4.0, "acceptedKeywords": ["标注", "分布", "像素"]}, {"id": "training", "description": "检查特征层、匹配与损失", "points": 4.0, "acceptedKeywords": ["特征层", "匹配", "损失"]}, {"id": "post", "description": "检查 NMS、阈值和 AP_small", "points": 4.5, "acceptedKeywords": ["NMS", "阈值", "AP_small", "召回"]}],
+          "explanation": "先确认信号是否存在，再定位训练监督，最后检查后处理与指标，避免只调一个 NMS 阈值。", "commonErrors": ["直接更换大型模型", "只看总 mAP", "不看原始候选框"], "distractorAnalysis": {},
+          "sources": [{"title": "Feature Pyramid Networks", "url": "https://arxiv.org/abs/1612.03144"}], "recommendedReview": "小目标特征金字塔与误差分析", "validationMethod": "分层消融实验", "testCases": [], "maxScore": 12.5
+        }
+      ]
+    },
+    {
+      "code": "transformer-vit-v1", "title": "Transformer、注意力与 ViT 综合题卷",
+      "description": "覆盖注意力缩放、张量形状、多头机制、位置编码与 ViT patch。", "topic": "Transformer、注意力和 ViT", "difficulty": "ADVANCED", "durationMinutes": 75,
+      "questions": [
+        {
+          "id": "vit-q1", "order": 1, "type": "SHORT_ANSWER", "difficulty": "ADVANCED", "knowledgePoints": ["scaled dot-product attention"],
+          "prompt": "为什么点积注意力要除以 sqrt(d_k)？", "subQuestions": [], "options": [],
+          "standardAnswer": "当 d_k 增大时，独立分量点积的方差随 d_k 增长，logit 绝对值变大使 softmax 饱和、梯度变小。除以 sqrt(d_k) 可稳定方差尺度。",
+          "scoringPoints": [{"id": "variance", "description": "点积方差随 d_k 增长", "points": 6.25, "acceptedKeywords": ["方差", "d_k", "增长"]}, {"id": "softmax", "description": "缓解 softmax 饱和与梯度问题", "points": 6.25, "acceptedKeywords": ["softmax", "饱和", "梯度"]}],
+          "explanation": "缩放项控制进入 softmax 的数值尺度，使训练更稳定。", "commonErrors": ["说成归一化概率总和", "误写除以 d_k"], "distractorAnalysis": {},
+          "sources": [{"title": "Attention Is All You Need", "url": "https://arxiv.org/abs/1706.03762"}], "recommendedReview": "点积方差与 softmax", "validationMethod": "统计不同 d_k 下 logit 方差", "testCases": [], "maxScore": 12.5
+        },
+        {
+          "id": "vit-q2", "order": 2, "type": "CALCULATION", "difficulty": "ADVANCED", "knowledgePoints": ["注意力张量形状", "矩阵乘法"],
+          "prompt": "Q 形状为 [B,H,N,D]，K 形状为 [B,H,M,D]。计算注意力 logits 时 K 应怎样转置，结果形状是什么？", "subQuestions": [], "options": [],
+          "standardAnswer": "K 在最后两维转置为 [B,H,D,M]，Q @ K.transpose(-2,-1) 得到 [B,H,N,M]。",
+          "scoringPoints": [{"id": "transpose", "description": "最后两维转置", "points": 6.25, "acceptedKeywords": ["transpose(-2,-1)", "D,M", "最后两维"]}, {"id": "shape", "description": "结果 [B,H,N,M]", "points": 6.25, "acceptedKeywords": ["B,H,N,M", "[B, H, N, M]"]}],
+          "explanation": "每个 query token 要与 M 个 key token 做点积，所以 logits 的最后两维是 N×M。", "commonErrors": ["转置 head 与 token 维", "结果写成 N×D"], "distractorAnalysis": {},
+          "sources": [{"title": "Attention Is All You Need", "url": "https://arxiv.org/abs/1706.03762"}], "recommendedReview": "批量矩阵乘法形状", "validationMethod": "用随机 tensor 执行 matmul", "testCases": [], "maxScore": 12.5
+        },
+        {
+          "id": "vit-q3", "order": 3, "type": "CODE_DEBUGGING", "difficulty": "ADVANCED", "knowledgePoints": ["softmax 维度", "注意力权重"],
+          "prompt": "代码 scores 形状为 [B,H,N,M]，却执行 softmax(dim=-2)。指出问题并修复。", "subQuestions": [], "options": [],
+          "standardAnswer": "每个 query 应在 M 个 key 上归一化，因此应使用 softmax(dim=-1)。dim=-2 会跨 query 位置 N 归一化。",
+          "scoringPoints": [{"id": "fix", "description": "改为 dim=-1", "points": 6.25, "acceptedKeywords": ["dim=-1"]}, {"id": "reason", "description": "在 key 维 M 上归一化", "points": 6.25, "acceptedKeywords": ["key", "M", "归一化"]}],
+          "explanation": "注意力权重对每个 query 的所有 key 求和应为 1。", "commonErrors": ["认为 softmax 维度不影响结果", "固定写 dim=1"], "distractorAnalysis": {},
+          "sources": [{"title": "PyTorch softmax", "url": "https://docs.pytorch.org/docs/stable/generated/torch.nn.functional.softmax.html"}], "recommendedReview": "注意力权重归一化维", "validationMethod": "assert attn.sum(dim=-1)≈1", "testCases": [{"input": "scores.softmax(dim=-1).sum(-1)", "expected": "all ones"}], "maxScore": 12.5
+        },
+        {
+          "id": "vit-q4", "order": 4, "type": "CALCULATION", "difficulty": "ADVANCED", "knowledgePoints": ["multi-head attention", "head dimension"],
+          "prompt": "模型维度 d_model=768，头数 h=12。每头维度是多少？Q 投影后重排为 [B,H,N,D] 时 D 是多少？", "subQuestions": [], "options": [],
+          "standardAnswer": "每头维度 D=d_model/h=768/12=64，因此重排后 D=64。",
+          "scoringPoints": [{"id": "division", "description": "写出 768/12", "points": 6.25, "acceptedKeywords": ["768/12", "d_model/h"]}, {"id": "result", "description": "得到 64", "points": 6.25, "acceptedKeywords": ["64"]}],
+          "explanation": "标准多头注意力把模型维均分到多个头，再拼接回 d_model。", "commonErrors": ["把头数乘到模型维", "忽略整除约束"], "distractorAnalysis": {},
+          "sources": [{"title": "Attention Is All You Need", "url": "https://arxiv.org/abs/1706.03762"}], "recommendedReview": "多头拆分与拼接", "validationMethod": "形状计算", "testCases": [], "maxScore": 12.5
+        },
+        {
+          "id": "vit-q5", "order": 5, "type": "SHORT_ANSWER", "difficulty": "ADVANCED", "knowledgePoints": ["位置编码", "排列不变性"],
+          "prompt": "如果自注意力层没有任何位置编码，为什么它难以区分 token 顺序？", "subQuestions": [], "options": [],
+          "standardAnswer": "仅基于内容的自注意力对输入排列是等变的：同步置换 token 会同步置换输出，模型没有绝对或相对位置信号来区分顺序。位置编码为 token 注入顺序信息。",
+          "scoringPoints": [{"id": "equivariance", "description": "指出排列等变/缺少顺序信号", "points": 6.25, "acceptedKeywords": ["排列", "等变", "顺序信号"]}, {"id": "position", "description": "位置编码注入绝对或相对位置", "points": 6.25, "acceptedKeywords": ["位置编码", "绝对", "相对"]}],
+          "explanation": "注意力的内容相似度本身不包含序列索引，顺序需要额外表示。", "commonErrors": ["认为 softmax 自动编码位置", "把 causal mask 与所有位置编码等同"], "distractorAnalysis": {},
+          "sources": [{"title": "Attention Is All You Need", "url": "https://arxiv.org/abs/1706.03762"}], "recommendedReview": "绝对与相对位置表示", "validationMethod": "概念核对", "testCases": [], "maxScore": 12.5
+        },
+        {
+          "id": "vit-q6", "order": 6, "type": "CALCULATION", "difficulty": "ADVANCED", "knowledgePoints": ["ViT patch", "token 数量"],
+          "prompt": "ViT 将 224×224 图像切成 16×16 patch，不重叠，并加入一个 class token。输入 Transformer 的 token 数是多少？", "subQuestions": [], "options": [],
+          "standardAnswer": "每边 224/16=14，共 14×14=196 个 patch，加 1 个 class token，得到 197。",
+          "scoringPoints": [{"id": "patches", "description": "得到 196 个 patch", "points": 6.25, "acceptedKeywords": ["14×14", "196"]}, {"id": "cls", "description": "加 class token 得 197", "points": 6.25, "acceptedKeywords": ["197", "class token", "CLS"]}],
+          "explanation": "ViT 把每个 patch 投影为一个 token，分类模型通常额外使用 class token。", "commonErrors": ["直接计算 224/16=14 就停止", "忘记 class token"], "distractorAnalysis": {},
+          "sources": [{"title": "An Image is Worth 16x16 Words", "url": "https://arxiv.org/abs/2010.11929"}], "recommendedReview": "patch embedding 与序列长度", "validationMethod": "形状计算", "testCases": [], "maxScore": 12.5
+        },
+        {
+          "id": "vit-q7", "order": 7, "type": "CALCULATION", "difficulty": "ADVANCED", "knowledgePoints": ["注意力复杂度", "token 数"],
+          "prompt": "忽略常数与通道投影，只考虑注意力矩阵。token 数从 N 增加到 2N，注意力矩阵的元素数量放大多少倍？", "subQuestions": [], "options": [],
+          "standardAnswer": "从 N² 变为 (2N)²=4N²，放大 4 倍。",
+          "scoringPoints": [{"id": "complexity", "description": "指出 N² 二次复杂度", "points": 6.25, "acceptedKeywords": ["N²", "N^2", "二次"]}, {"id": "factor", "description": "得到 4 倍", "points": 6.25, "acceptedKeywords": ["4 倍", "4倍", "4N"]}],
+          "explanation": "全局自注意力为每对 token 计算相关性，因此矩阵大小随序列长度平方增长。", "commonErrors": ["认为只放大 2 倍", "把 d_model 也重复平方"], "distractorAnalysis": {},
+          "sources": [{"title": "Attention Is All You Need", "url": "https://arxiv.org/abs/1706.03762"}], "recommendedReview": "序列长度与显存", "validationMethod": "矩阵元素数量计算", "testCases": [], "maxScore": 12.5
+        },
+        {
+          "id": "vit-q8", "order": 8, "type": "MULTI_STEP", "difficulty": "ADVANCED", "knowledgePoints": ["attention mask", "padding mask", "causal mask"],
+          "prompt": "设计一个同时含 padding 的自回归注意力 mask。说明 padding mask 与 causal mask 各阻止什么，并说明合并后应在 softmax 前如何作用于 logits。", "subQuestions": ["padding mask", "causal mask", "合并应用"], "options": [],
+          "standardAnswer": "padding mask 阻止关注无效填充 key；causal mask 阻止位置 i 看到未来 j>i。两者广播到注意力 logits 形状后做逻辑或，被屏蔽位置在 softmax 前填为 -inf（或足够小的有限值），使权重为 0。",
+          "scoringPoints": [{"id": "padding", "description": "padding mask 屏蔽填充 key", "points": 4.0, "acceptedKeywords": ["padding", "填充", "key"]}, {"id": "causal", "description": "causal mask 屏蔽未来位置", "points": 4.0, "acceptedKeywords": ["causal", "未来", "j>i"]}, {"id": "apply", "description": "softmax 前将合并屏蔽位设为 -inf", "points": 4.5, "acceptedKeywords": ["softmax 前", "-inf", "负无穷", "逻辑或"]}],
+          "explanation": "mask 是对可见关系的硬约束，必须与 batch/head/query/key 维正确广播。", "commonErrors": ["softmax 后再填 -inf", "只屏蔽 query padding 不屏蔽 key padding", "mask 语义取反"], "distractorAnalysis": {},
+          "sources": [{"title": "Attention Is All You Need", "url": "https://arxiv.org/abs/1706.03762"}], "recommendedReview": "mask 广播与数值稳定", "validationMethod": "检查被屏蔽位置注意力权重为 0", "testCases": [{"input": "masked_softmax(logits)", "expected": "masked weights == 0"}], "maxScore": 12.5
+        }
+      ]
+    },
+    {
+      "code": "cv-engineering-v1", "title": "计算机视觉工程案例综合题卷",
+      "description": "覆盖数据契约、训练/推理一致性、部署、监控与可复现实验。", "topic": "完整计算机视觉工程案例", "difficulty": "ADVANCED", "durationMinutes": 80,
+      "questions": [
+        {
+          "id": "eng-q1", "order": 1, "type": "MULTI_STEP", "difficulty": "ADVANCED", "knowledgePoints": ["数据版本", "可复现性"],
+          "prompt": "团队无法复现上周最佳模型。设计最小可复现记录，至少覆盖数据、代码、配置和产物。", "subQuestions": [], "options": [],
+          "standardAnswer": "记录不可变数据版本/清单与划分、代码提交哈希、完整训练配置和随机种子、依赖/硬件环境、模型权重与指标日志，并给出一条可重放命令。",
+          "scoringPoints": [{"id": "data", "description": "数据版本与划分", "points": 3.0, "acceptedKeywords": ["数据版本", "清单", "划分"]}, {"id": "code", "description": "代码提交与配置种子", "points": 3.0, "acceptedKeywords": ["提交哈希", "配置", "随机种子"]}, {"id": "env", "description": "依赖与环境", "points": 3.0, "acceptedKeywords": ["依赖", "环境", "硬件"]}, {"id": "artifact", "description": "权重日志与重放命令", "points": 3.5, "acceptedKeywords": ["权重", "日志", "重放"]}],
+          "explanation": "模型文件本身不足以复现结果，训练输入、程序、配置和环境都属于实验状态。", "commonErrors": ["只保存最终权重", "覆盖旧数据", "未记录划分"], "distractorAnalysis": {},
+          "sources": [{"title": "PyTorch reproducibility", "url": "https://docs.pytorch.org/docs/stable/notes/randomness.html"}], "recommendedReview": "实验追踪与数据版本", "validationMethod": "在干净环境执行重放命令", "testCases": [], "maxScore": 12.5
+        },
+        {
+          "id": "eng-q2", "order": 2, "type": "CODE_DEBUGGING", "difficulty": "ADVANCED", "knowledgePoints": ["预处理一致性", "通道顺序"],
+          "prompt": "训练使用 RGB、[0,1]、ImageNet mean/std；线上 OpenCV 直接读 BGR uint8 后送入模型，指标骤降。给出修复与回归测试。", "subQuestions": [], "options": [],
+          "standardAnswer": "线上需 BGR→RGB、转 float、除以255，并使用相同 mean/std 和 resize/crop。把预处理做成共享、版本化函数；保存一组黄金输入，比对离线与线上张量及输出误差。",
+          "scoringPoints": [{"id": "pipeline", "description": "修复颜色、数值范围与归一化", "points": 6.25, "acceptedKeywords": ["BGR", "RGB", "255", "mean", "std"]}, {"id": "test", "description": "共享预处理并做黄金样本回归", "points": 6.25, "acceptedKeywords": ["共享", "黄金", "回归测试", "张量"]}],
+          "explanation": "训练/推理数据契约不一致会形成系统性分布偏移，应通过共享实现与黄金样本测试防回归。", "commonErrors": ["只调模型阈值", "在线上重新估计 mean/std", "只看最终类别不比对张量"], "distractorAnalysis": {},
+          "sources": [{"title": "PyTorch transfer learning tutorial", "url": "https://docs.pytorch.org/tutorials/beginner/transfer_learning_tutorial.html"}], "recommendedReview": "输入数据契约", "validationMethod": "逐元素比对预处理后 tensor", "testCases": [{"input": "golden_image.jpg", "expected": "online_tensor ≈ offline_tensor"}], "maxScore": 12.5
+        },
+        {
+          "id": "eng-q3", "order": 3, "type": "CALCULATION", "difficulty": "ADVANCED", "knowledgePoints": ["混淆矩阵", "precision", "recall"],
+          "prompt": "二分类中 TP=80、FP=20、FN=40。计算 precision 与 recall。", "subQuestions": [], "options": [],
+          "standardAnswer": "precision=80/(80+20)=0.8；recall=80/(80+40)=2/3≈0.6667。",
+          "scoringPoints": [{"id": "precision", "description": "precision 0.8", "points": 6.25, "acceptedKeywords": ["0.8", "80%"]}, {"id": "recall", "description": "recall 0.6667", "points": 6.25, "acceptedKeywords": ["0.6667", "2/3", "66.67%"]}],
+          "explanation": "precision 的分母是所有预测为正，recall 的分母是所有真实为正。", "commonErrors": ["交换 FP 与 FN", "把 accuracy 当 precision"], "distractorAnalysis": {},
+          "sources": [{"title": "scikit-learn classification metrics", "url": "https://scikit-learn.org/stable/modules/model_evaluation.html#classification-metrics"}], "recommendedReview": "混淆矩阵指标", "validationMethod": "公式校验", "testCases": [], "maxScore": 12.5
+        },
+        {
+          "id": "eng-q4", "order": 4, "type": "CODE_DEBUGGING", "difficulty": "ADVANCED", "knowledgePoints": ["batch 维", "ONNX", "部署 shape"],
+          "prompt": "导出的 ONNX 模型只接受 batch=1，线上 batch=8 报 shape 错误。解释导出时需要声明什么，并指出仍需验证的边界。", "subQuestions": [], "options": [],
+          "standardAnswer": "导出时为输入和输出的 batch 维声明 dynamic_axes/dynamic_shapes，而不是把示例输入的 1 固化。仍需用 batch=1、8 等实际尺寸在目标运行时验证，部分算子或 reshape 可能仍隐含静态维。",
+          "scoringPoints": [{"id": "dynamic", "description": "声明动态 batch 维", "points": 6.25, "acceptedKeywords": ["dynamic_axes", "dynamic_shapes", "batch"]}, {"id": "verify", "description": "在目标运行时验证多 batch 与静态算子", "points": 6.25, "acceptedKeywords": ["运行时", "batch=8", "验证", "reshape"]}],
+          "explanation": "示例输入参与图追踪，未声明动态维时可能固化 shape。动态声明也不能替代目标运行时测试。", "commonErrors": ["只改线上 batch 参数", "假设所有维都应动态", "只在 PyTorch 内验证"], "distractorAnalysis": {},
+          "sources": [{"title": "PyTorch ONNX export", "url": "https://docs.pytorch.org/docs/stable/onnx.html"}], "recommendedReview": "模型导出动态形状", "validationMethod": "ONNX Runtime 多 batch 集成测试", "testCases": [{"input": "batch=1", "expected": "success"}, {"input": "batch=8", "expected": "success"}], "maxScore": 12.5
+        },
+        {
+          "id": "eng-q5", "order": 5, "type": "SHORT_ANSWER", "difficulty": "ADVANCED", "knowledgePoints": ["确定性", "可复现性"],
+          "prompt": "为什么设置随机种子仍不保证跨平台完全相同？工程报告应怎样表述？", "subQuestions": [], "options": [],
+          "standardAnswer": "不同硬件、库版本、并行顺序和非确定性算子可能产生差异，确定性设置也可能牺牲性能。报告应记录环境与设置，区分同环境可复现和跨平台数值一致，并给出允许误差。",
+          "scoringPoints": [{"id": "causes", "description": "指出硬件/版本/非确定性算子", "points": 6.25, "acceptedKeywords": ["硬件", "版本", "非确定性", "并行"]}, {"id": "report", "description": "记录环境并声明范围与误差", "points": 6.25, "acceptedKeywords": ["记录环境", "允许误差", "跨平台"]}],
+          "explanation": "随机种子只控制部分随机源，不是整个计算栈的数学确定性证明。", "commonErrors": ["承诺任何环境逐位一致", "为复现关闭所有优化却不记录代价"], "distractorAnalysis": {},
+          "sources": [{"title": "PyTorch reproducibility", "url": "https://docs.pytorch.org/docs/stable/notes/randomness.html"}], "recommendedReview": "随机源与确定性算法", "validationMethod": "同环境多次与跨环境容差测试", "testCases": [], "maxScore": 12.5
+        },
+        {
+          "id": "eng-q6", "order": 6, "type": "MULTI_STEP", "difficulty": "ADVANCED", "knowledgePoints": ["数据漂移", "监控"],
+          "prompt": "线上没有即时标签，如何监控视觉模型可能发生的数据漂移？给出输入、模型输出和延迟三层信号，并说明不能据此直接断言准确率下降。", "subQuestions": [], "options": [],
+          "standardAnswer": "输入层监控亮度、分辨率、来源和特征分布；输出层监控置信度、类别比例、拒识率和 embedding 分布；系统层监控延迟/错误率。漂移信号只是风险提示，没有标签不能直接等同准确率下降，应触发抽样标注与回归评估。",
+          "scoringPoints": [{"id": "input", "description": "输入/特征分布信号", "points": 3.0, "acceptedKeywords": ["亮度", "分辨率", "特征分布"]}, {"id": "output", "description": "输出置信度或类别分布", "points": 3.0, "acceptedKeywords": ["置信度", "类别比例", "embedding"]}, {"id": "system", "description": "延迟与错误率", "points": 3.0, "acceptedKeywords": ["延迟", "错误率"]}, {"id": "limit", "description": "说明需抽样标注验证", "points": 3.5, "acceptedKeywords": ["不能直接", "抽样标注", "回归评估"]}],
+          "explanation": "无标签监控提供代理信号，必须与后续标注评估闭环。", "commonErrors": ["把平均置信度直接当准确率", "只监控服务存活", "漂移后自动重训且无人审查"], "distractorAnalysis": {},
+          "sources": [{"title": "Hidden Technical Debt in Machine Learning Systems", "url": "https://papers.nips.cc/paper/5656-hidden-technical-debt-in-machine-learning-systems"}], "recommendedReview": "数据质量与模型监控", "validationMethod": "构造分布变化演练并检查告警", "testCases": [], "maxScore": 12.5
+        },
+        {
+          "id": "eng-q7", "order": 7, "type": "SINGLE_CHOICE", "difficulty": "ADVANCED", "knowledgePoints": ["安全发布", "回滚"],
+          "prompt": "视觉模型上线时，哪种方案最能降低一次性发布风险？", "subQuestions": [],
+          "options": [{"key": "A", "text": "直接替换全部实例"}, {"key": "B", "text": "删除旧模型节省空间"}, {"key": "C", "text": "灰度/影子流量、监控关键指标并保留可回滚版本"}, {"key": "D", "text": "只看离线训练损失"}],
+          "standardAnswer": "C", "scoringPoints": [{"id": "choice", "description": "选择灰度、监控与回滚", "points": 12.5, "acceptedKeywords": ["C", "灰度", "回滚"]}],
+          "explanation": "渐进发布限制影响面，影子或灰度流量提供在线证据，保留旧版本使异常时能快速回滚。", "commonErrors": ["只做备份不监控", "用训练损失代替线上指标"],
+          "distractorAnalysis": {"A": "影响面最大", "B": "失去快速回滚能力", "D": "训练损失不能代表线上安全"},
+          "sources": [{"title": "Rules of Machine Learning", "url": "https://developers.google.com/machine-learning/guides/rules-of-ml"}], "recommendedReview": "模型发布策略", "validationMethod": "发布演练与回滚演练", "testCases": [], "maxScore": 12.5
+        },
+        {
+          "id": "eng-q8", "order": 8, "type": "MULTI_STEP", "difficulty": "ADVANCED", "knowledgePoints": ["端到端排障", "数据契约", "模型服务"],
+          "prompt": "分类服务离线准确率 92%，线上人工抽查约 70%。设计按优先级的端到端排查流程，要求能区分输入、模型版本、后处理和采样偏差。", "subQuestions": ["确认可比性", "逐层对照", "形成回归证据"], "options": [],
+          "standardAnswer": "先确认线上抽样定义、标签质量和时间窗口可比；用同一批黄金样本逐层记录原始文件、解码、预处理 tensor、模型版本/权重哈希、raw logits、阈值与后处理；比对离线和线上每层输出，检查流量分布；修复后固化端到端回归与监控。",
+          "scoringPoints": [{"id": "sampling", "description": "确认抽样、标签与时间窗口", "points": 3.0, "acceptedKeywords": ["抽样", "标签", "时间窗口"]}, {"id": "input", "description": "比对解码与预处理 tensor", "points": 3.0, "acceptedKeywords": ["解码", "预处理", "tensor"]}, {"id": "model", "description": "核对模型版本、logits 与后处理", "points": 3.0, "acceptedKeywords": ["权重哈希", "logits", "阈值", "后处理"]}, {"id": "regression", "description": "固化黄金样本回归与监控", "points": 3.5, "acceptedKeywords": ["黄金样本", "回归", "监控"]}],
+          "explanation": "先保证比较对象一致，再沿数据流逐层定位第一个分叉点，最后把事故样本变成回归测试。", "commonErrors": ["直接重训", "只看最终预测不看中间契约", "忽略线上样本选择偏差"], "distractorAnalysis": {},
+          "sources": [{"title": "Hidden Technical Debt in Machine Learning Systems", "url": "https://papers.nips.cc/paper/5656-hidden-technical-debt-in-machine-learning-systems"}], "recommendedReview": "端到端数据与模型契约", "validationMethod": "黄金样本逐层哈希和数值对比", "testCases": [{"input": "golden request", "expected": "offline and online logits within tolerance"}], "maxScore": 12.5
+        }
+      ]
+    }
+  ]
+}

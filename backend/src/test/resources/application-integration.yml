@@ -1,0 +1,46 @@
+server:
+  port: 0
+
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+  sql:
+    init:
+      mode: never
+
+visionary:
+  demo-mode:
+    enabled: false
+    warmup-on-startup: false
+  showcase:
+    seed-on-startup: false
+  agent:
+    governance:
+      # The integration contract verifies one bounded Critic pass per artifact.
+      max-revision-rounds: 0
+  demo-scenario:
+    seed-enabled: true
+    seed-token: integration-seed
+
+agent:
+  mode: workflow
+
+vector:
+  db:
+    enabled: true
+    type: chroma
+    chroma-api-version: V2
+    tenant-name: default_tenant
+    database-name: default_database
+    collection-name: visionary_integration_knowledge
+    embedding-provider: local
+    vector-dimension: 384
+    connect-timeout-seconds: 5
+    read-timeout-seconds: 10
+
+logging:
+  level:
+    com.visionary: INFO

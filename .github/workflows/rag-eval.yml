@@ -1,0 +1,126 @@
+name: RAG Evaluation
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'ai_engine/**'
+      - 'backend/src/main/java/com/visionary/rag/**'
+      - 'backend/src/main/java/com/visionary/controller/AdminKnowledgeController.java'
+      - 'docker-compose.rag-eval.yml'
+      - '.github/workflows/rag-eval.yml'
+  pull_request:
+    paths:
+      - 'ai_engine/**'
+      - 'backend/src/main/java/com/visionary/rag/**'
+      - 'backend/src/main/java/com/visionary/controller/AdminKnowledgeController.java'
+      - 'docker-compose.rag-eval.yml'
+      - '.github/workflows/rag-eval.yml'
+
+jobs:
+  rag-eval:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Start evaluation dependencies
+        run: docker compose -f docker-compose.rag-eval.yml up -d --wait
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+          cache-dependency-path: backend/pom.xml
+
+      - name: Build backend
+        run: mvn -f backend -DskipTests package
+
+      - name: Launch backend for RAG diagnostic
+        env:
+          DB_URL: jdbc:mysql://127.0.0.1:3306/visionary_tutor?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+          DB_USERNAME: root
+          DB_PASSWORD: visionary
+          REDIS_HOST: 127.0.0.1
+          REDIS_PORT: 6379
+          VECTOR_DB_ENABLED: 'true'
+          CHROMA_HOST: 127.0.0.1
+          CHROMA_PORT: 8000
+          EMBEDDING_PROVIDER: local
+          VECTOR_DIMENSION: 384
+          BM25_MAX_DOCUMENTS: 20000
+          SHOWCASE_SEED_ON_STARTUP: 'false'
+          TTS_ENABLED: 'false'
+          SANDBOX_DOCKER_ENABLED: 'false'
+          ALIYUN_OSS_ACCESS_KEY: ''
+          ALIYUN_OSS_SECRET_KEY: ''
+          DEEPSEEK_API_KEY: ''
+          QWEN_VL_MAX_KEY: ''
+          XUNFEI_SPARK_MAX_KEY: ''
+          XUNFEI_SPARK_VOICE_KEY: ''
+          XUNFEI_APP_ID: ''
+          XUNFEI_API_SECRET: ''
+        run: |
+          java -jar backend/target/visionary-tutor-backend-*.jar \
+            --server.port=8080 \
+            --vector.db.enabled=true \
+            --vector.db.host=127.0.0.1 \
+            --vector.db.port=8000 \
+            --vector.db.embedding-provider=local \
+            --vector.db.vector-dimension=384 \
+            --visionary.showcase.seed-on-startup=false \
+            --visionary.tts.enabled=false \
+            --sandbox.docker.enabled=false \
+            > backend-rag-eval.log 2>&1 &
+          echo $! > backend.pid
+          for i in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:8080/api/health >/dev/null; then
+              echo "Backend is healthy"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Backend failed to start"
+          tail -n 200 backend-rag-eval.log || true
+          exit 1
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Run RAG evaluation and render report
+        env:
+          BACKEND_BASE_URL: http://127.0.0.1:8080
+          RAG_EVAL_SET: ai_engine/eval_sets/rag_gold_qa.jsonl
+          RAG_EVAL_REPORT_DIR: reports
+          RAG_EVAL_TIMEOUT: 25
+          RAG_EVAL_MAX_FAILURES: 0
+          RAG_EVAL_MIN_CITATION: 0.88
+          RAG_EVAL_MIN_FAITHFULNESS: 0.80
+          RAG_EVAL_MIN_REFUSAL: 0.90
+          RAG_EVAL_MIN_TOP_K_RECALL: 0.88
+          RAG_EVAL_MIN_UNSUPPORTED_REFUSAL: 0.90
+          RAG_EVAL_MAX_P95_MS: 2500
+        run: python ai_engine/rag_eval_report.py
+
+      - name: Upload RAG evaluation artifacts
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: rag-eval-report
+          path: |
+            reports/rag_eval_*.json
+            reports/rag_eval_*.md
+          if-no-files-found: error
+
+      - name: Stop backend
+        if: always()
+        run: |
+          if [ -f backend.pid ]; then
+            kill "$(cat backend.pid)" || true
+          fi
+          docker compose -f docker-compose.rag-eval.yml down -v || true

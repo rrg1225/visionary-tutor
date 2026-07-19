@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://visionary-tutor.local/schemas/resource-content-v1.schema.json",
+  "title": "VisionaryTutor resource content envelope",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "origin",
+    "generation_mode",
+    "degraded",
+    "personalized",
+    "agent"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "origin": { "enum": ["LIVE", "DEGRADED", "DEMO"] },
+    "generation_mode": { "type": "string", "minLength": 1 },
+    "degraded": { "type": "boolean" },
+    "personalized": { "type": "boolean" },
+    "agent": { "type": "string", "minLength": 1 },
+    "fallback_reason": { "type": "string" },
+    "content_safety": { "enum": ["PASSED", "REVIEW_REQUIRED", "BLOCKED"] }
+  },
+  "additionalProperties": true
+}

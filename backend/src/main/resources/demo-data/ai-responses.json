@@ -1,0 +1,46 @@
+{
+  "chatFallback": "当前处于 Demo Mode。本地教学助手已加载预置课程证据，将继续展示稳定、可审计的个性化学习流程。",
+  "imageUrl": "/demo-data/teaching-keyframe.svg",
+  "resourceArtifacts": [
+    {
+      "artifactType": "HANDOUT",
+      "title": "卷积神经网络个性化讲义",
+      "contentMarkdown": "# 卷积神经网络讲义\n\n## 学习目标\n理解卷积核、步长与填充如何影响特征图尺寸。\n\n## 核心提示\n先用一个 3x3 输入和 2x2 卷积核手算，再进入代码练习。"
+    },
+    {
+      "artifactType": "QUIZ",
+      "title": "卷积参数分层练习",
+      "contentMarkdown": "# 分层练习\n\n1. 输入尺寸为 5，卷积核为 3，步长为 1，无填充时输出尺寸是多少？\n2. 为什么 padding 可以保留边缘信息？\n3. 写出输出尺寸计算公式。"
+    },
+    {
+      "artifactType": "MINDMAP",
+      "title": "卷积知识点思维导图",
+      "contentMarkdown": "```mermaid\nmindmap\n  root((卷积神经网络))\n    卷积核\n    步长\n    填充\n    特征图\n```"
+    },
+    {
+      "artifactType": "LEARNING_PATH",
+      "title": "CNN 一周学习路径",
+      "contentMarkdown": "# 学习路径\n\n1. 手算卷积输出尺寸\n2. 对比 padding 与 stride\n3. 完成 PyTorch 最小案例\n4. 提交小测并根据错题复盘"
+    },
+    {
+      "artifactType": "CODE_PRACTICE",
+      "title": "PyTorch 卷积实操",
+      "contentMarkdown": "# 代码实操\n\n使用 `torch.nn.Conv2d` 建立最小案例，打印输入、卷积核和输出张量形状，并解释每个维度。"
+    },
+    {
+      "artifactType": "EXTENDED_READING",
+      "title": "CNN 拓展阅读",
+      "contentMarkdown": "# 拓展阅读\n\n建议继续阅读感受野、池化与特征层级，并用一个小型图像分类案例验证理解。"
+    },
+    {
+      "artifactType": "VISUALIZATION",
+      "title": "卷积本地动画与文字注解",
+      "contentMarkdown": "# 本地交互动画\n\n步骤 1：展示 3x3 输入网格。\n步骤 2：移动 2x2 卷积核并高亮局部区域。\n步骤 3：同步写入输出特征图，并用文字解释每次乘加。"
+    },
+    {
+      "artifactType": "VISUALIZATION",
+      "title": "卷积过程交互可视化",
+      "contentMarkdown": "# 交互可视化\n\n允许学生调整卷积核大小、步长和填充，实时观察输出尺寸变化。"
+    }
+  ]
+}

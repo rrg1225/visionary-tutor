@@ -1,0 +1,472 @@
+# =====================================================
+# VisionaryTutor Backend - 企业级配置文件模板
+# =====================================================
+# 说明：
+# 1. 所有敏感信息（密码、Key）建议通过环境变量注入，格式为 ${ENV_NAME:默认值}
+# 2. 本文件为开发/测试环境模板，生产环境请使用 Config Server 或 K8s ConfigMap
+# 3. 跨域配置推荐通过 Java Config 实现（WebMvcConfigurer），此处仅做示例
+
+# -----------------------------------------------------
+# 1. Server 配置（端口 + 跨域）
+# -----------------------------------------------------
+server:
+  port: 8080
+  # Tomcat 相关配置
+  tomcat:
+    threads:
+      max: 200
+      min-spare: 10
+    max-connections: 10000
+    connection-timeout: 20000
+
+# -----------------------------------------------------
+# 2. Spring 核心配置
+# -----------------------------------------------------
+spring:
+  output:
+    ansi:
+      enabled: never
+  application:
+    name: visionary-tutor-backend
+
+  # 从 backend/.env.properties 加载敏感配置（已抽离明文密钥）
+  config:
+    import: optional:file:.env.properties,optional:file:backend/.env.properties
+
+  # =================================================
+  # MySQL 数据库连接配置
+  # =================================================
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+    # HikariCP 连接池配置
+    hikari:
+      pool-name: VisionaryTutorHikariPool
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      connection-test-query: SELECT 1
+
+  # 已禁用自动执行 schema.sql（生产/演示环境安全要求）
+  # 如需初始化请手动执行 schema.sql 或改用 Flyway/Liquibase
+  sql:
+    init:
+      mode: never
+      # schema-locations: classpath:db/schema.sql
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+
+  # JPA / Hibernate 配置（剥夺 Hibernate 自动建表权限）
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.MySQLDialect
+
+  # =================================================
+  # Redis 缓存配置
+  # =================================================
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
+      password: ${REDIS_PASSWORD:}
+      database: 0
+      timeout: 10000ms
+      lettuce:
+        pool:
+          max-active: 8
+          max-wait: -1ms
+          max-idle: 8
+          min-idle: 0
+
+  # 密码找回邮件；未配置 host 时接口会明确返回“SMTP 未配置”。
+  mail:
+    host: ${SPRING_MAIL_HOST:}
+    port: ${SPRING_MAIL_PORT:587}
+    username: ${SPRING_MAIL_USERNAME:}
+    password: ${SPRING_MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: ${SPRING_MAIL_SMTP_AUTH:true}
+          starttls:
+            enable: ${SPRING_MAIL_STARTTLS_ENABLE:true}
+
+  # 文件上传配置
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 20MB
+      max-request-size: 100MB
+
+# -----------------------------------------------------
+# 3. 阿里云 OSS 对象存储配置
+# -----------------------------------------------------
+aliyun:
+  oss:
+    # Endpoint 示例：https://oss-cn-beijing.aliyuncs.com
+    endpoint:  https://oss-cn-hangzhou.aliyuncs.com
+    access-key-id: ${ALIYUN_OSS_ACCESS_KEY:}
+    access-key-secret: ${ALIYUN_OSS_SECRET_KEY:}
+    bucket-name: rag-a3
+    # 可选：自定义 CDN 域名
+    custom-domain: 
+    # 上传文件大小限制（MB）
+    max-file-size-mb: 10
+    # URL 过期时间（秒）
+    url-expiration-seconds: 3600
+
+# -----------------------------------------------------
+# 4. AI 服务配置
+# -----------------------------------------------------
+ai:
+  circuit-breaker:
+    failure-threshold: ${AI_CIRCUIT_FAILURE_THRESHOLD:3}
+    reset-timeout-ms: ${AI_CIRCUIT_RESET_TIMEOUT_MS:30000}
+  # Keys bound to AiApiConfig (prefix=ai.api) — now loaded from .env.properties
+  api:
+    deepSeekKey: ${DEEPSEEK_API_KEY:}
+    qwenVlMaxKey: ${QWEN_VL_MAX_KEY:}
+    xunfeiSparkMaxKey: ${XUNFEI_SPARK_MAX_KEY:}
+    xunfeiSparkVoiceKey: ${XUNFEI_SPARK_VOICE_KEY:}
+    deepSeekBaseUrl: ${DEEPSEEK_BASE_URL:https://api.deepseek.com}
+    qwenBaseUrl: ${QWEN_BASE_URL:https://dashscope.aliyuncs.com/compatible-mode/v1}
+    xunfeiSparkBaseUrl: ${XUNFEI_SPARK_BASE_URL:https://spark-api-open.xf-yun.com/v4}
+    dashScopeKey: ${DASHSCOPE_API_KEY:${QWEN_VL_MAX_KEY:}}
+    dashScopeImageUrl: ${DASHSCOPE_IMAGE_URL:https://dashscope.aliyuncs.com/api/v1/services/aigc/text2image/image-synthesis}
+    dashScopeTaskUrl: ${DASHSCOPE_TASK_URL:https://dashscope.aliyuncs.com/api/v1/tasks}
+    dashScopeImageModel: ${DASHSCOPE_IMAGE_MODEL:wanx-v1}
+    dashScopeRerankUrl: ${DASHSCOPE_RERANK_URL:https://dashscope.aliyuncs.com/api/v1/services/rerank/text-rerank/text-rerank}
+    dashScopeRerankModel: ${DASHSCOPE_RERANK_MODEL:gte-rerank}
+
+  # Xunfei extra (non-key) — loaded from .env.properties
+  xunfei:
+    app-id: ${XUNFEI_APP_ID:}
+    api-secret: ${XUNFEI_API_SECRET:}
+
+  # 通用 HTTP 客户端配置
+  http:
+    connect-timeout-seconds: 15
+    read-timeout-seconds: 90
+    write-timeout-seconds: 30
+    max-retries: 3
+    retry-backoff-ms: 500
+
+# -----------------------------------------------------
+# 5. Chroma 向量数据库（与 Python document_processor.py HttpClient 对齐）
+#    默认端点: http://localhost:8000
+#    全局 Collection: visionary_global_knowledge
+# -----------------------------------------------------
+vector:
+  db:
+    enabled: true
+    type: chroma
+    host: ${CHROMA_HOST:localhost}
+    port: ${CHROMA_PORT:8000}
+    chroma-api-version: V2
+    tenant-name: default_tenant
+    database-name: default_database
+    # 必须与 Python 脚本写入的 collection 完全一致（勿改分层旧名）
+    collection-name: visionary_global_knowledge
+    # 知识库路径（相对于项目根目录）
+    knowledge-base-path: ai_engine/knowledge_base/processed
+    # 正式答辩请设 EMBEDDING_PROVIDER=dashscope（local 召回/忠实度偏低，见 ai_engine/rag_eval.py）
+    embedding-provider: ${EMBEDDING_PROVIDER:local}
+    embedding-model: ${EMBEDDING_MODEL_NAME:all-MiniLM-L6-v2}
+    vector-dimension: ${VECTOR_DIMENSION:1024}
+    default-top-k: 8
+    similarity-threshold: 0.0
+    min-content-length: 40
+    keyword-rerank-enabled: true
+    connect-timeout-seconds: 10
+    read-timeout-seconds: 30
+    chroma-query-timeout-ms: ${CHROMA_QUERY_TIMEOUT_MS:3000}
+    bm25-fallback-enabled: ${BM25_FALLBACK_ENABLED:true}
+    bm25-fallback-sla-ms: ${BM25_FALLBACK_SLA_MS:50}
+    bm25-max-documents: ${BM25_MAX_DOCUMENTS:800}
+    hybrid-retrieval-enabled: ${HYBRID_RETRIEVAL_ENABLED:true}
+    hybrid-candidate-multiplier: ${HYBRID_CANDIDATE_MULTIPLIER:2}
+    rrf-k: ${RRF_K:60}
+
+# -----------------------------------------------------
+# 6. 日志与监控（可选）
+# -----------------------------------------------------
+logging:
+  level:
+    com.visionary: INFO
+    org.springframework.web: INFO
+    com.zaxxer.hikari: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+# -----------------------------------------------------
+# 7. 其他业务配置
+# -----------------------------------------------------
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  tracing:
+    sampling:
+      probability: ${OTEL_TRACES_SAMPLER_PROBABILITY:1.0}
+  otlp:
+    tracing:
+      endpoint: ${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT:http://127.0.0.1:4318/v1/traces}
+
+visionary:
+  demo-mode:
+    enabled: ${DEMO_MODE:false}
+    data-resource: ${DEMO_DATA_RESOURCE:classpath:demo-data/ai-responses.json}
+    warmup-on-startup: ${DEMO_WARMUP_ON_STARTUP:false}
+    warmup-username: ${DEMO_WARMUP_USERNAME:demo_learner}
+    warmup-topic: ${DEMO_WARMUP_TOPIC:计算机视觉 - CNN 卷积、Padding/Stride 专题}
+  demo-scenario:
+    data-resource: ${DEMO_SCENARIO_RESOURCE:classpath:demo-data/demo-scenario-cnn.json}
+    seed-enabled: ${DEMO_SCENARIO_SEED_ENABLED:false}
+    seed-on-startup: ${DEMO_SCENARIO_SEED_ON_STARTUP:false}
+    seed-token: ${DEMO_SCENARIO_SEED_TOKEN:}
+  showcase:
+    seed-on-startup: ${SHOWCASE_SEED_ON_STARTUP:true}
+    seed-owner-username: ${SHOWCASE_SEED_OWNER:}
+  guest:
+    redis-ttl-hours: 1
+    max-chat-turns: ${GUEST_MAX_CHAT_TURNS:5}
+  # RAG 是否启用（false 时检索返回空上下文）
+  rag-enabled: true
+  # 视觉评估图片最大尺寸（MB）
+  assessment-max-image-size-mb: 10
+  # 学习材料生成最大 Token 数
+  material-max-tokens: 4096
+  chat:
+    # 滑动窗口：除 System Prompt 外保留最近 N 条消息
+    recent-message-limit: 15
+    # 经审核答案 + 成功模型答案的读穿缓存；命中后仍执行 RAG/审计，只跳过重复生成。
+    answer-cache:
+      enabled: ${CHAT_ANSWER_CACHE_ENABLED:true}
+      seed-resource: classpath:demo-data/reviewed-chat-answers.json
+      max-entries: ${CHAT_ANSWER_CACHE_MAX_ENTRIES:256}
+      ttl-minutes: ${CHAT_ANSWER_CACHE_TTL_MINUTES:1440}
+  agent:
+    distributed: false
+    handoff-timeout-ms: 90000
+    governance:
+      max-revision-rounds: 5
+      delta-threshold: 3.0
+      convergence-delta-threshold: 0.05
+      objective-weight: 0.4
+      llm-weight: 0.6
+    worker:
+      enabled: false
+      poll-interval-ms: 500
+  learning-os:
+    async-remediation: true
+    remediation-queue-key: visionary:learning-os:remediation
+  recommendation:
+    scheduled-push-enabled: true
+    scheduled-push-interval-ms: 21600000
+    scheduled-push-initial-delay-ms: 120000
+    active-session-window-hours: 72
+  admin:
+    user-ids:
+      - 1
+    usernames: ${ADMIN_USERNAMES:demo_admin}
+  notification:
+    websocket-enabled: true
+    heartbeat-interval-ms: 30000
+  tts:
+    enabled: ${TTS_ENABLED:true}
+    primary-provider: ${TTS_PRIMARY_PROVIDER:dashscope}
+    fallback-enabled: ${TTS_FALLBACK_ENABLED:true}
+    max-text-length: 4000
+    default-voice: longxiaochun
+    default-format: mp3
+    cache:
+      enabled: true
+      redis-ttl-days: 30
+      storage-dir: ${TTS_STORAGE_DIR:./storage/tts}
+    dashscope:
+      model: cosyvoice-v1
+      url: https://dashscope.aliyuncs.com/api/v1/services/aigc/text-to-speech/synthesis
+    xunfei:
+      app-id: ${XUNFEI_APP_ID:}
+      api-key: ${XUNFEI_TTS_API_KEY:${XUNFEI_SPARK_MAX_KEY:}}
+      api-secret: ${XUNFEI_API_SECRET:}
+      url: ${XUNFEI_TTS_URL:wss://tts-api.xfyun.cn/v2/tts}
+      voice: xiaoyan
+      aue: ${XUNFEI_TTS_AUE:lame}
+      connect-timeout-seconds: ${XUNFEI_TTS_CONNECT_TIMEOUT_SECONDS:15}
+      response-timeout-seconds: ${XUNFEI_TTS_RESPONSE_TIMEOUT_SECONDS:30}
+      max-audio-bytes: ${XUNFEI_TTS_MAX_AUDIO_BYTES:10485760}
+
+# -----------------------------------------------------
+# 8. ReAct 多智能体架构配置
+# -----------------------------------------------------
+# 智能体工作模式：
+# - legacy（默认）: 使用硬编码的并行编排，所有 Specialist 同时执行
+# - react: 使用 ReAct 模式，LLM 自主决策调用哪些工具，支持动态规划
+#
+# ReAct 模式优势：
+# 1. 智能决策：LLM 根据任务需求选择必要工具，避免冗余生成
+# 2. 动态编排：可串行可并行，根据中间结果调整后续策略
+# 3. 质量审查：自动生成资源后，LLM 会主动调用 Critic 进行审查
+# 4. 学术诚实：真正的 Agent 架构而非 Prompt 工程
+#
+# 切换方式：
+# 1. 修改下方配置：agent.mode=react
+# 2. 或启动参数：--agent.mode=react
+# 3. 或环境变量：AGENT_MODE=react
+#
+# 注意：ReAct 模式需要配置 DeepSeek API 才能正常工作
+agent:
+  mode: ${AGENT_MODE:react}
+  react:
+    max-iterations: ${AGENT_REACT_MAX_ITERATIONS:16}
+    max-parallel-tools: 4
+    tool-timeout-ms: 60000
+    # 熔断配置：防止 LLM 陷入无限工具调用循环
+    fuse-enabled: true
+
+  # -----------------------------------------------------
+  # 9. Agent 编排配置 - 业务参数集中管理
+  # -----------------------------------------------------
+  orchestration:
+    # BaseSpecialistAgent: 标准执行流程配置（RAG + LLM 单次调用）
+    max-iterations: 4
+
+    # SupervisorAgent: Critic 返修最大轮次
+    max-revision-rounds: 5
+
+    # SupervisorAgent: Specialist Agent 超时时间（秒）
+    specialist-timeout-seconds: 90
+    total-timeout-seconds: ${AGENT_TOTAL_TIMEOUT_SECONDS:120}
+
+    # CriticAgent: 事实性评分默认值（0.0-1.0）
+    factuality-default-score: 0.85
+
+    # CriticAgent: 事实性评分低阈值（低于此值触发重规划）
+    factuality-low-threshold: 0.75
+
+    # CriticAgent: 事实性评分失败降级值（调用异常时使用）
+    factuality-fallback-score: 0.6
+
+    # PlannerAgent: 学生画像截断长度（字符数）
+    profile-truncate-length: 800
+
+    # PlannerAgent: 薄弱点信息截断长度（字符数）
+    weak-points-truncate-length: 400
+
+    # PathAgent: 学生画像截断长度
+    path-agent-profile-truncate-length: 400
+
+    # DocAgent: 学生画像截断长度
+    doc-agent-profile-truncate-length: 500
+
+    # QuizAgent: 默认题目数量
+    default-question-count: 6
+
+    # QuizAgent: 最小题目数量
+    min-question-count: 3
+
+    # QuizAgent: 最大题目数量
+    max-question-count: 15
+
+    # QuizAgent: 学生画像截断长度
+    quiz-agent-profile-truncate-length: 500
+
+    # MindMapAgent: 学生画像截断长度
+    mind-map-agent-profile-truncate-length: 300
+
+    # 交叉审查最大输出长度（字符数）
+    cross-critique-max-length: 200
+
+    # RAG 上下文默认截断长度
+    rag-context-truncate-length: 800
+
+    # Agent-to-Agent 协商：OUTLINE 提案 + 黑板对齐 + Critic 消息协议
+    enable-agent-negotiation: true
+    outline-max-length: 320
+
+    # Fallback 机制配置：当 Critic 返修达到上限仍失败时，将任务标记为 MANUAL_REVIEW_REQUIRED
+    enable-manual-review-fallback: true
+    manual-review-default-reason: "多次返修后仍无法通过自动审查，需要人工审核"
+
+  # -----------------------------------------------------
+  # MCP (Model Context Protocol) — 标准外部工具总线
+  # -----------------------------------------------------
+  # 默认关闭；启用需 Node/npx（stdio）或远程 MCP Server（sse / streamable-http）
+  # 工具命名：mcp:{serverName}:{toolName}
+  generation:
+    total-timeout-seconds: ${GENERATION_TOTAL_TIMEOUT_SECONDS:240}
+    idempotency-retention-minutes: ${GENERATION_IDEMPOTENCY_RETENTION_MINUTES:15}
+    idempotency-maximum-entries: ${GENERATION_IDEMPOTENCY_MAX_ENTRIES:1000}
+    executor:
+      core-size: ${AGENT_EXECUTOR_CORE_SIZE:4}
+      max-size: ${AGENT_EXECUTOR_MAX_SIZE:8}
+      queue-capacity: ${AGENT_EXECUTOR_QUEUE_CAPACITY:32}
+
+  mcp:
+    enabled: ${AGENT_MCP_ENABLED:false}
+    tool-name-prefix: "mcp:"
+    default-timeout-ms: ${AGENT_MCP_TIMEOUT_MS:15000}
+    max-retries: 1
+    servers:
+      - name: filesystem
+        enabled: ${AGENT_MCP_FILESYSTEM_ENABLED:false}
+        transport: stdio
+        command: ${AGENT_MCP_NPX_COMMAND:npx}
+        args:
+          - "-y"
+          - "@modelcontextprotocol/server-filesystem"
+          - "${AGENT_MCP_FILESYSTEM_ROOT:./ai_engine/knowledge_base}"
+        allowed-tools:
+          - read_file
+          - list_directory
+          - search_files
+        read-only: true
+        timeout-ms: 20000
+
+# -----------------------------------------------------
+# 10. Docker 代码沙箱（隔离执行 Python 片段）
+# -----------------------------------------------------
+sandbox:
+  docker:
+    enabled: ${SANDBOX_DOCKER_ENABLED:true}
+    host: ${SANDBOX_DOCKER_HOST:}
+    image: ${SANDBOX_DOCKER_IMAGE:python:3.10-slim}
+    memory-mb: ${SANDBOX_DOCKER_MEMORY_MB:256}
+    cpus: ${SANDBOX_DOCKER_CPUS:0.5}
+    timeout-seconds: ${SANDBOX_DOCKER_TIMEOUT_SECONDS:5}
+    pull-on-start: ${SANDBOX_DOCKER_PULL_ON_START:true}
+
+# -----------------------------------------------------
+# 11. PPTX 导出（标准版 + Premium 精美版）
+# -----------------------------------------------------
+# 原则：排版不破 > 信息不全 > 接口报错
+# Premium 失败静默 fallback，详见 docs/DEVELOPMENT.md §7
+pptx:
+  python:
+    path: ${PPTX_PYTHON_PATH:python}
+  script:
+    path: ${PPTX_SCRIPT_PATH:../ai_engine/pptx_generator.py}
+  premium:
+    enabled: ${PPTX_PREMIUM_ENABLED:true}
+    script:
+      path: ${PPTX_PREMIUM_SCRIPT_PATH:../ai_engine/pptx_premium_exporter.py}
+    timeout-seconds: ${PPTX_PREMIUM_TIMEOUT_SECONDS:18}
+  template:
+    dir: ${PPTX_TEMPLATE_DIR:../ai_engine/templates}
+    base-name: ${PPTX_TEMPLATE_BASE_NAME:visionary-deck-v1}
+    startup-verify: ${PPTX_TEMPLATE_STARTUP_VERIFY:true}

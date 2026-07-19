@@ -1,0 +1,62 @@
+[
+  {
+    "shape_id": "s00_sh5",
+    "placeholder": "{{topic}}",
+    "preview": "topic",
+    "slide_index": 0
+  },
+  {
+    "shape_id": "s00_sh5",
+    "placeholder": "{{subtitle}}",
+    "preview": "subtitle",
+    "slide_index": 0
+  },
+  {
+    "shape_id": "s01_sh12",
+    "placeholder": "{{studentProfile}}",
+    "preview": "studentProfile",
+    "slide_index": 1
+  },
+  {
+    "shape_id": "s02_sh22",
+    "placeholder": "{{footerNote}}",
+    "preview": "footerNote",
+    "slide_index": 2
+  },
+  {
+    "shape_id": "s03_sh29",
+    "placeholder": "{{handout}}",
+    "preview": "handout",
+    "slide_index": 3
+  },
+  {
+    "shape_id": "s04_sh37",
+    "placeholder": "{{quiz}}",
+    "preview": "quiz",
+    "slide_index": 4
+  },
+  {
+    "shape_id": "s05_sh49",
+    "placeholder": "{{mindmap}}",
+    "preview": "mindmap",
+    "slide_index": 5
+  },
+  {
+    "shape_id": "s05_sh50",
+    "placeholder": "{{mindmap_image}}",
+    "preview": "mindmap_image",
+    "slide_index": 5
+  },
+  {
+    "shape_id": "s06_sh56",
+    "placeholder": "{{videoScript}}",
+    "preview": "videoScript",
+    "slide_index": 6
+  },
+  {
+    "shape_id": "s07_sh63",
+    "placeholder": "{{citations}}",
+    "preview": "citations",
+    "slide_index": 7
+  }
+]

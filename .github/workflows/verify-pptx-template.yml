@@ -1,0 +1,72 @@
+name: Verify PPTX Template
+
+on:
+  push:
+    paths:
+      - 'ai_engine/templates/**'
+      - 'ai_engine/pptx_kit/**'
+      - 'ai_engine/scripts/verify_pptx_template.py'
+      - '.github/workflows/verify-pptx-template.yml'
+  pull_request:
+    paths:
+      - 'ai_engine/templates/**'
+      - 'ai_engine/pptx_kit/**'
+      - 'ai_engine/scripts/verify_pptx_template.py'
+
+jobs:
+  verify-template:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          lfs: true
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: ai_engine/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install python-pptx==0.6.21
+
+      - name: Verify template bundle integrity
+        run: python ai_engine/scripts/verify_pptx_template.py
+
+      - name: Smoke test premium exporter
+        run: |
+          python - <<'PY'
+          import json, subprocess, sys, tempfile
+          from pathlib import Path
+
+          payload = {
+              "topic": "测试主题",
+              "subtitle": "智眸学伴",
+              "studentProfile": "测试画像",
+              "handout": ["要点一", "要点二"],
+              "quiz": ["题目一"],
+              "mindmap": "A -> B",
+              "videoScript": ["场景1"],
+              "citations": ["来源1"],
+              "footerNote": "完整讲义见智眸学伴资源卡片",
+          }
+          td = Path(tempfile.mkdtemp())
+          jf = td / "data.json"
+          out = td / "out.pptx"
+          jf.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+          r = subprocess.run([
+              sys.executable, "ai_engine/pptx_premium_exporter.py",
+              "--json", str(jf),
+              "--template", "ai_engine/templates",
+              "--output", str(out),
+          ], capture_output=True, text=True)
+          print(r.stderr)
+          if r.returncode != 0 or not out.exists() or out.stat().st_size < 1000:
+              raise SystemExit(f"premium smoke failed: exit={r.returncode}")
+          print("[SUCCESS] premium exporter smoke test passed")
+          PY

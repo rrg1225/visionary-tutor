@@ -1,0 +1,121 @@
+{
+  "runId": "demo-cnn-run",
+  "topic": "CNN Padding/Stride defense demo",
+  "conversationSummary": "Student is preparing for a computer vision module and repeatedly confuses padding, stride, and output feature-map size.",
+  "emotionSnapshot": "focused, slight confusion on formulas",
+  "student": {
+    "username": "demo_student",
+    "password": "Demo@2026",
+    "email": "demo_student@demo.local",
+    "displayName": "Demo Student",
+    "learningGoal": "Master CNN padding and stride with measurable improvement",
+    "learnerProfileSnapshot": {
+      "learningStyle": "visual + practice",
+      "goal": "Understand CNN feature-map size",
+      "weakPoints": ["padding", "stride", "feature map formula"],
+      "onboardingComplete": true
+    },
+    "emotionProfileSnapshot": {
+      "cameraAssist": "off_by_default",
+      "abstractSignalsOnly": true
+    }
+  },
+  "admin": {
+    "username": "demo_admin",
+    "password": "Admin@2026",
+    "email": "demo_admin@demo.local",
+    "displayName": "Demo Admin",
+    "learningGoal": "Review RAG and agent audit evidence"
+  },
+  "conversation": [
+    {
+      "role": "user",
+      "content": "I know convolution kernels slide over images, but I keep mixing up padding and stride."
+    },
+    {
+      "role": "assistant",
+      "content": "Let's anchor the formula O=floor((I-K+2P)/S)+1 and compare padding=0/1 with stride=1/2."
+    }
+  ],
+  "concepts": [
+    { "concept": "CNN padding/stride", "preTest": 0.42, "postTest": 0.78 },
+    { "concept": "feature map size formula", "preTest": 0.38, "postTest": 0.74 },
+    { "concept": "receptive field intuition", "preTest": 0.51, "postTest": 0.81 }
+  ],
+  "artifacts": [
+    {
+      "artifactType": "HANDOUT",
+      "agent": "DocAgent",
+      "title": "CNN Padding/Stride focused handout",
+      "contentMarkdown": "# CNN Padding/Stride focused handout\n\n## Formula\n`O = floor((I - K + 2P) / S) + 1`\n\nPadding adds border values so edge information is preserved. Stride controls how far the kernel moves each step. Larger stride usually makes the output feature map smaller.\n\n## Example\nFor input 5, kernel 3, padding 1, stride 1: `floor((5-3+2)/1)+1=5`.\n\n[cite-cnn-padding-stride]",
+      "citations": [
+        { "id": "cite-cnn-padding-stride", "title": "CS231n convolution notes", "excerpt": "Padding changes boundary handling and stride changes convolution step size." }
+      ],
+      "verificationAudit": {
+        "groundingMetrics": { "faithfulness": 0.94, "citationCoverage": 0.91, "unsupportedClaims": 0 }
+      },
+      "reviewNotes": "CriticAgent: PASS; formula and worked example are grounded."
+    },
+    {
+      "artifactType": "QUIZ",
+      "agent": "QuizAgent",
+      "title": "Padding/Stride pre-post quiz",
+      "contentMarkdown": "# Padding/Stride quiz\n\n1. Input 7, kernel 3, padding 0, stride 2. Output size?\n2. Why does padding preserve edge information?\n3. What happens when stride increases?\n\nAnswer key: 3; it keeps boundary pixels represented; the output grid shrinks.\n\n[cite-cnn-padding-stride]",
+      "citations": [
+        { "id": "cite-cnn-padding-stride", "title": "CS231n convolution notes", "excerpt": "The output size depends on input size, kernel size, padding and stride." }
+      ],
+      "verificationAudit": {
+        "groundingMetrics": { "faithfulness": 0.9, "citationCoverage": 0.87, "unsupportedClaims": 0 }
+      },
+      "reviewNotes": "CriticAgent: PASS; answer key matches formula."
+    },
+    {
+      "artifactType": "LEARNING_PATH",
+      "agent": "PathAgent",
+      "title": "CNN mastery path",
+      "contentMarkdown": "# CNN mastery path\n\n1. Rebuild the output-size formula.\n2. Compare padding=0 and padding=1 on the same 5x5 input.\n3. Complete the quiz and inspect mistakes.\n4. Run a tiny PyTorch tensor-shape check.\n5. Retake the post-test.\n\n[cite-cnn-padding-stride]",
+      "citations": [
+        { "id": "cite-cnn-padding-stride", "title": "CS231n convolution notes", "excerpt": "Convolution output size follows the standard padding and stride formula." }
+      ],
+      "verificationAudit": {
+        "groundingMetrics": { "faithfulness": 0.89, "citationCoverage": 0.82, "unsupportedClaims": 0 }
+      },
+      "reviewNotes": "CriticAgent: PASS; path closes pre-test to post-test loop."
+    }
+  ],
+  "usage": [
+    { "artifactType": "HANDOUT", "actionType": "view", "durationSeconds": 360, "feedback": "formula clarified" },
+    { "artifactType": "QUIZ", "actionType": "complete", "durationSeconds": 420, "feedback": "one stride mistake corrected" },
+    { "artifactType": "LEARNING_PATH", "actionType": "view", "durationSeconds": 180, "feedback": "ready for post test" }
+  ],
+  "agentTrace": [
+    {
+      "agentName": "PlannerAgent",
+      "stepOrder": 1,
+      "input": "topic=CNN Padding/Stride; learnerProfile=visual+practice; weakPoints=padding,stride,feature map formula",
+      "output": "Plan: DocAgent explains formula, QuizAgent measures, PathAgent closes loop.",
+      "critique": "Schema valid; selected agents align with weak points."
+    },
+    {
+      "agentName": "RAGRetrieveTool",
+      "stepOrder": 2,
+      "input": "query=CNN padding stride output feature map formula",
+      "output": "Retrieved cite-cnn-padding-stride from CS231n convolution notes.",
+      "critique": "Evidence supports formula and terminology."
+    },
+    {
+      "agentName": "CriticAgent",
+      "stepOrder": 3,
+      "input": "Review HANDOUT, QUIZ, LEARNING_PATH against citations.",
+      "output": "factualityScore=0.92; citationCoverage=0.87; verdict=PASS",
+      "critique": "No unsupported formula claims; learning loop evidence present."
+    },
+    {
+      "agentName": "ReviewAgent",
+      "stepOrder": 4,
+      "input": "Aggregate resources and learning-effect metrics.",
+      "output": "Before/after improvement: CNN padding/stride 42% to 78%.",
+      "critique": "Defense-ready trace complete."
+    }
+  ]
+}

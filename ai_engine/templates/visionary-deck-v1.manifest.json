@@ -1,0 +1,32 @@
+{
+  "templateVersion": "1.0.0",
+  "baseName": "visionary-deck-v1",
+  "slideCount": 8,
+  "requiredSlotIds": [
+    "s00_sh5",
+    "s00_sh5",
+    "s01_sh12",
+    "s02_sh22",
+    "s03_sh29",
+    "s04_sh37",
+    "s05_sh49",
+    "s05_sh50",
+    "s06_sh56",
+    "s07_sh63"
+  ],
+  "files": {
+    "pptx": {
+      "path": "templates/visionary-deck-v1.pptx",
+      "sha256": "a26d9810bfad4fff89657fb31a8f0c9d5170afc7ed104a827e2e49e3c8ddaa8e"
+    },
+    "slots": {
+      "path": "templates/visionary-deck-v1.slots.json",
+      "sha256": "584a1d295749ceda6cdf8cbebf973bd3d7944f9eccc8ede29522c7d1ee05420c"
+    },
+    "mapping": {
+      "path": "templates/visionary-deck-v1.mapping.json",
+      "sha256": "6687c9599423fbc6deaf0b385bc6df9df4608ded1ea603a164b6379cad093caf"
+    }
+  },
+  "generatedAt": "2026-06-05T12:00:00Z"
+}

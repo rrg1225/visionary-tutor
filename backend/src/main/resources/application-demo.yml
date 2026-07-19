@@ -1,0 +1,31 @@
+# =====================================================
+# VisionaryTutor Demo / 答辩 Profile
+# =====================================================
+# 激活方式: --spring.profiles.active=demo
+# 或环境变量: SPRING_PROFILES_ACTIVE=demo
+#
+# 强制 DashScope 1024 维向量 + 相似度阈值 0.38，与 ai_engine/document_processor.py 入库配置对齐。
+# 启动时会由 VectorDbStartupVerifier 校验 Chroma collection 维度，不匹配则 fail-fast。
+
+vector:
+  db:
+    enabled: true
+    embedding-provider: dashscope
+    embedding-model: text-embedding-v4
+    vector-dimension: 1024
+    similarity-threshold: 0.38
+
+visionary:
+  demo-mode:
+    enabled: true
+    warmup-on-startup: false
+    warmup-username: demo_student
+    warmup-topic: 计算机视觉 - CNN 卷积、Padding/Stride 专题
+  demo-scenario:
+    seed-on-startup: true
+  agent:
+    governance:
+      max-revision-rounds: 2
+      delta-threshold: 3.0
+      objective-weight: 0.4
+      llm-weight: 0.6
