@@ -170,7 +170,9 @@ const defaultHandlers: MockHandlers = {
     return json(route, {
       valid: true,
       message: 'ok',
-      type: isGuest ? 'guest' : 'user',
+      // Match JwtUtil#getTokenType; auth recovery compares these enum values
+      // case-sensitively before the router decides whether /auth is accessible.
+      type: isGuest ? 'GUEST' : 'USER',
       subject: isGuest ? MOCK_GUEST_ID : String(MOCK_USER_ID),
     })
   },
