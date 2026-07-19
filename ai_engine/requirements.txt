@@ -2,11 +2,11 @@
 --extra-index-url https://download.pytorch.org/whl/cpu
 torch==2.13.0
 
-# The application imports the focused LangChain packages below directly; the
-# umbrella `langchain` package is intentionally omitted.
-langchain-text-splitters==1.1.2
-langchain-chroma==1.1.0
-chromadb==1.5.9
+# Stay on the Chroma 0.x server line: ChromaDB 1.0.0-1.5.9 has an unpatched
+# pre-authentication code-injection advisory. The application does not need the
+# affected model-loading API or the umbrella `langchain` package.
+langchain-chroma==0.2.2
+chromadb==0.5.23
 numpy==1.26.4
 onnxruntime==1.20.1
 fastapi==0.139.2

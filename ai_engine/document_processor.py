@@ -20,7 +20,6 @@ from pathlib import Path
 from typing import Any, Iterator
 
 import chromadb
-from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_chroma import Chroma
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
@@ -620,20 +619,6 @@ def load_documents_from_processed_layers() -> list[Document]:
     return documents
 
 
-def build_text_splitter() -> RecursiveCharacterTextSplitter:
-    """创建基于教学场景的文本切分器。
-    
-    注意：对于包含代码和LaTeX的教学文档，推荐使用 structure_aware_split_documents。
-    """
-    return RecursiveCharacterTextSplitter(
-        chunk_size=DEFAULT_CHUNK_SIZE,
-        chunk_overlap=DEFAULT_CHUNK_OVERLAP,
-        separators=CHINESE_AWARE_SEPARATORS,
-        length_function=len,
-        is_separator_regex=False,
-    )
-
-
 def structure_aware_split_document(
     doc: Document,
     target_size: int = DEFAULT_CHUNK_SIZE,
@@ -744,9 +729,9 @@ def structure_aware_split_documents(
 def maybe_resplit_documents(documents: list[Document]) -> list[Document]:
     """
     对过大的文档进行结构感知重分块。
-    
-    优先使用 structure_aware_split_documents 保护代码和公式完整性。
-    对于不包含代码/公式的简单文本，回退到标准 RecursiveCharacterTextSplitter。
+
+    统一使用项目自有的结构感知分块，保护代码、公式和题目边界，
+    并避免为一个简单的纯文本分块操作引入额外的 URL 加载依赖。
     """
     output: list[Document] = []
     
@@ -757,25 +742,11 @@ def maybe_resplit_documents(documents: list[Document]) -> list[Document]:
             output.append(doc)
             continue
         
-        # 检测是否包含需要保护的内容
-        structure = detect_content_structure(text)
-        needs_protection = bool(
-            structure["code_blocks"] or 
-            structure["formulas"] or 
-            structure["tables"] or
-            structure["exercises"]
+        subs = structure_aware_split_document(
+            doc,
+            DEFAULT_CHUNK_SIZE,
+            DEFAULT_CHUNK_OVERLAP,
         )
-        
-        if needs_protection:
-            # 使用结构感知分块保护重要边界
-            subs = structure_aware_split_document(doc, DEFAULT_CHUNK_SIZE, DEFAULT_CHUNK_OVERLAP)
-        else:
-            # 纯文本使用标准切分
-            splitter = build_text_splitter()
-            subs = []
-            for index, sub in enumerate(splitter.split_documents([doc])):
-                sub.metadata = {**doc.metadata, "chunk_index": index}
-                subs.append(sub)
         
         # 确保每个子块都有完整的元数据
         for sub in subs:
