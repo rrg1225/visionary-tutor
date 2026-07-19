@@ -36,7 +36,7 @@
     "dompurify": "^3.2.6",
     "element-plus": "^2.9.11",
     "katex": "^0.16.22",
-    "markdown-it": "^14.1.0",
+    "markdown-it": "^14.2.0",
     "mermaid": "^11.6.0",
     "pinia": "^2.3.1",
     "pyodide": "^0.26.4",
