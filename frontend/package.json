@@ -32,7 +32,7 @@
   "dependencies": {
     "@capacitor/core": "^8.4.2",
     "@mediapipe/tasks-vision": "^0.10.32",
-    "axios": "^1.9.0",
+    "axios": "^1.18.0",
     "dompurify": "^3.2.6",
     "element-plus": "^2.9.11",
     "katex": "^0.16.22",
